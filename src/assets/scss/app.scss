@@ -1,0 +1,59 @@
+@use "variables";
+@use '../scripts/Vendor/notice/scss/notice.scss';
+@use '../scripts/Vendor/modal/scss/modal.scss';
+@use '../scripts/Vendor/dragdrop/scss/dragdrop.scss';
+@use '../scripts/Vendor/dragdropfile/scss/dragdropfile.scss';
+@use "./element.scss";
+@use "./setting.scss";
+@use './accountant.scss';
+@use './print.scss';
+@use './quotation.scss';
+@use './panel.scss';
+@use './file-manager.scss';
+
+* {
+	box-sizing: border-box;
+}
+
+.invisible {
+	visibility: hidden;
+}
+#tsp_quotation, #tsp_delivery {
+	.page {
+		font-family: 'Times New Roman', Times, serif;
+	}
+}
+.doc--method {
+	margin: 0;
+}
+.order--document {
+	margin-bottom: 0;
+	display: inline-block;
+	padding: 0 5px;
+	&:first-child {
+		padding-left: 0;
+	}
+	&::after {
+		content: '|'; margin-left: 10px;
+	}
+	&:last-child::after {
+		content: '';
+	}
+}
+.delete__button {
+	margin-left: 7px;
+	color: blue;
+	cursor: pointer;
+	&:hover {
+		opacity: 0.7;
+	}
+	span {
+		font-size: 16px;		
+	}
+
+}
+.document-upload-form {
+	width: 100%;
+}
+
+/*# sourceMappingURL=app.css.map */

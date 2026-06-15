@@ -1,0 +1,73 @@
+<div class="header_">
+	<div class="logo"><img src="/wp-content/uploads/2025/06/logo-tinsinhphat.png" class="company__logo"></div>
+	<div class="mycompany">
+		 <p class="bold">CTY TNHH MTV THƯƠNG MẠI BAO BÌ TÍN SINH PHÁT</p>
+		 <p>Địa chỉ: <span class="bold">2 Đông Hồ, Phường Tân Hoà, TP Hồ Chí Minh</span></p>
+		 <p>ĐT: <span class="bold">0987596879</span> - email: <span class="bold">tien.lavan@gmail.com</span></p>
+		 <img src="/wp-content/uploads/2025/06/dau-cty-tinsinhphat.png" class="stampLink">
+	</div>
+</div>
+
+<div class="customer">
+	<h2>BẢNG BÁO GIÁ</h2>
+	<div class="customer__wrapper">
+		 <!-- ... Các dòng thông tin khách hàng giữ nguyên ... -->
+		 <div class="line">
+			  <label class="line__label">Kính gởi</label>
+			  <div class="line__content user">
+					<span class="bold editable">{{sex}} {{last_name}} {{first_name}}</span>
+			  </div>
+		 </div>
+		 <!-- ... Các line khác tương tự ... -->
+	</div>
+	<p class="hello__mes">Chúng tôi trân trọng gởi đến Quý công ty bảng báo giá các sản phẩm in ấn theo yêu cầu của Quý khách:</p>
+</div>
+
+<div class="price_table">
+	<table class="table quotation-table">
+		 <thead>
+			  <tr>
+					<th width="5%">STT</th>
+					<th width="45%">Tên & Quy cách</th>
+					<th width="10%">ĐVT</th>
+					<th width="10%">Số lượng</th>					
+					<th width="15%">Đơn giá</th>
+					<th width="15%">Thành tiền</th>
+			  </tr>
+		 </thead>
+		 <tbody>
+			  <!--#products-->
+			  <tr>
+					<td align="center">{{index}}</td>
+					<td style="text-align: left;">
+						 <strong contenteditable="true">* {{name}}</strong><br/>
+						 <div class="product-specs" contenteditable="true">{{specs}}</div>
+					</td>
+					<td align="center" contenteditable="true">{{unit}}</td>
+					<td align="center" contenteditable="true">{{quantity}}</td>
+					<td align="right" contenteditable="true">{{price}}</td>
+					<td align="right"><strong>{{total}}</strong></td>
+			  </tr>
+			  <!--/products-->
+		 </tbody>
+		 <tfoot class="table__footer"> 
+			  <tr>
+					<td colspan="5" class="bold">Tổng tiền</td>
+					<td align="right" class="totalBeforeVAT">{{subtotal}}</td>
+			  </tr>
+			  <tr>
+					<td colspan="5">Thuế VAT <span class="vatRate">{{vat}}</span>%</td>					
+					<td align="right" class="vatPercentage">{{vat_amount}}</td>					
+			  </tr>
+			  <tr>
+					<td colspan="5" class="bold">Tổng tiền thanh toán</td>
+					<td align="right" class="totalpaid"><strong>{{grand_total}}</strong></td>					
+			  </tr>
+			  <tr>
+					<td colspan="6" class="byWord"><i>Bằng chữ: {{total_in_words}}</i></td>							
+			  </tr>
+		 </tfoot>			
+	</table>
+</div>
+
+<!-- ... Các phần more_info và chữ ký giữ nguyên ... -->

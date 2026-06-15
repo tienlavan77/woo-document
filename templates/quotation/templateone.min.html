@@ -1,0 +1,139 @@
+	<div class="header_">
+		<div class="logo"><img src=/wp-content/uploads/2025/06/logo-tinsinhphat.png class=company__logo></div>
+		<div class="mycompany">
+			<p class="bold">CTY TNHH MTV THƯƠNG MẠI BAO BÌ TÍN SINH PHÁT</p>
+			<p>Địa chỉ: <span class="bold">2 Đông Hồ, Phường Tân Hoà, TP Hồ Chí Minh</span></p>
+			<p>ĐT: <span class="bold">0987596879</span> - email: <span class="bold">tien.lavan@gmail.com</span></p>
+			<img src=/wp-content/uploads/2025/06/dau-cty-tinsinhphat.png class=stampLink>
+		</div>
+	</div>
+	<h2 class="quotation-title">BẢNG BÁO GIÁ</h2>
+	<div class="customer"> 
+		<div class="customer__wrapper">
+			<div class="line">
+				<label for="" class="line__label">Kính gởi</label>
+				<div class="line__content user">
+					<span class="semi-bold" contenteditable="true" data-locate="customer|sex"></span>&nbsp;
+					<span class="semi-bold" contenteditable="true" data-locate="customer|last_name"></span>&nbsp;
+					<span class="semi-bold" contenteditable="true" data-locate="customer|first_name"></span>					
+				</div>
+			</div>
+			<div class="line">
+				<label for="" class="line__label">Công ty</label>
+				<div class="line__content __company">
+					<span class="semi-bold" contenteditable="true" data-locate="customer|company"></span>					
+				</div>
+			</div>
+			<div class="line">
+				<label for="" class="line__label">Địa chỉ</label>
+				<div class="line__content __billing">
+					<span class="semi-bold" contenteditable="true" data-locate="customer|billing"></span>
+				</div>
+			</div>
+			<div class="line">
+				<label for="" class="line__label tel">Điện thoại</label>
+				<div class="line__content __phone">
+					<span class="semi-bold" contenteditable="true" data-locate="customer|phone"></span>
+				</div>
+			
+			</div>
+			<div class="line">				
+				<label for="" class="line__label">Email</label>
+				<div class="line__content __email">
+					<span class="semi-bold" contenteditable="true" data-locate="customer|email"></span>
+				</div>
+			</div>
+		</div>
+		<p class="hello__mes">Chúng tôi trân trọng gởi đến Quý công ty bảng báo giá các sản phẩm in ấn theo yêu cầu của Quý khách:</p>
+	</div>
+	<div class="price_table">
+		<table class="table products">
+			<thead class="table__header">
+				<tr class="table__row">
+					<th class="table__column index">
+						<div class="screen-only">
+							<input type="checkbox" class="check-all" id="check-all-products" title="Chọn tất cả">
+						</div>
+						<span class="print-only">STT</span>
+					</th>
+					<th class="table__column specs">Tên & Quy cách</th>
+					<th class="table__column unit">ĐVT</th>
+					<th class="table__column quantity">Số lượng</th>					
+					<th class="table__column price">Đơn giá</th>
+					<th class="table__column total">Thành tiền</th>
+					
+				</tr>
+			</thead>
+			<tbody class="table__body products__list" id="products__list">
+				 <!--#products
+					
+						<td align="center" class="index">{{index}}</td>
+						<td align="left" class="specs">							
+							<div class="table__column product-specs" >
+								{{specs}}
+							</div>
+						</td>
+						<td align="center" class="table__column unit">{{unit}}</td>
+						<td align="right"  class="table__column quantity">{{quantity}}</td>
+						<td align="right"  class="table__column price">{{price}}</td>
+						<td align="right"  class="table__column total">{{total}}</td>
+				
+				/products-->
+				<!--#totalpaid-->				
+				<tr class="table__row vat-tr" id="product_vat">
+					<td align="center" rowspan=4 class="index">
+						<span id="vat-toggle" class="index-button eye-toggle-btn screen-only" data-action="_vatHidden" title="Ẩn VAT khi in">
+							<span class="dashicons dashicons-hidden"></span> </span>
+							<!--content: "\f177"; -->
+							<!-- <span class="dashicons dashicons-hidden"></span> -->
+					</td>
+					<td class="table__column totaltitle" colspan="4">Tổng tiền</td>
+					<td align="right" class="table__column align__top align__right" data-field="totalNonVat"></td>					
+				</tr>
+				<tr class="table__row vat-tr">
+					
+					<td class="table__column vattitle" colspan="4">Thuế VAT <span class=vatRate data-field="rate" ></span>%</td>					
+					<td align="right" class="table__column align__top align__right" data-field="totalVat"></td>					
+				</tr>
+				<tr class="table__row vat-tr">					
+					<td class="table__column totalpaidtitle" colspan="4">Tổng tiền thanh toán</td>
+					<td align="right" class="table__column align__top align__right" data-field="totalPaid"></td>					
+				</tr>
+				<tr class="table__row vat-tr">					
+					<td align="left" class="table__column" colspan="5">Bằng chữ: <span data-field="byWord"></span></td>							
+				</tr>
+				<!--/totalpaid-->
+			</tbody>
+		
+		</table>
+	</div>
+	<div class="more_info">
+		<p class="quotation-info editable hello__mes">Giá trên chưa bao gồm 8% VAT, tổng tiền thanh toán chỉ ước tính với số lượng đầu tiên ở mỗi sản phẩm.</p>
+		<div class="more_info-wrapper">
+			<h4 class="more_info-title">1. Phương thức thanh toán:</h4>
+			<div class="more_info-content">
+				<p class="quotation-info editable">- Chuyển khoản.</p>			
+				<p class="quotation-info editable">- Thanh toán 100% giá trị đơn hàng sau khi giao hàng & Phát hành hoá đơn VAT.</p>
+			</div>
+		</div>
+		<div class="more_info-wrapper">
+			<h4 class="quotation-info">2. Phương thức giao hàng</h4>
+			<div class="more_info-content">
+				<p class="quotation-info editable">- Thời gian giao hàng 15 ngày tính từ ngày ký duyệt mẫu.</p>
+				<p class="quotation-info editable">- Địa điểm giao hàng: Tại trụ sở Quý công ty, do chúng tôi tự đảm nhận.</p>
+				<p class="quotation-info editable">- Bảng báo giá này có giá trị trong vòng 15 ngày.</p>
+			</div>
+		</div>
+	</div>
+	<p class="quotation-date editable">Ngày {d} tháng {m} năm {y}</p>
+	<div class="signater">
+		<div class="saler">
+			<p><span class="saler">Nhân viên kinh doanh</span></p>
+			<img src=/wp-content/uploads/2019/08/signature.png class=signatureLink>
+			<p class="saler_name"><span>La Văn Tiến</span>- Mobile: 0987596879</p>
+		</div>
+		<div class="customer-approve">
+			<p><span>Xác nhận đặt hàng</span></p>
+		</div>
+	</div>
+

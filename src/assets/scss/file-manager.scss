@@ -1,0 +1,127 @@
+#document-upload-files {
+	.drop-zone {
+		padding:0;
+	}
+	.drag__file {
+		display: none;
+	}
+	.drop-zone__wrapper {
+		position: inherit;
+		top:auto;
+		left: auto;
+		transform: none;
+		padding: 15px;
+	}
+	.file-grid-item {
+		display: flex;
+	}
+	.drop-zone__items {
+		display: grid;
+		
+	}
+		
+}
+.document-upload-form {
+	.section-title {
+		margin-bottom: 5px;
+	}
+	.file-manager-instruction {
+		font-size: 12px;
+		color: #666;
+		font-style: italic;
+	}
+}
+
+.file-manager-header-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+
+    .file-manager-instruction {
+        font-size: 12px;
+        color: #666;
+        font-style: italic;
+        margin: 0;
+    }
+
+    .load-more-link {
+        font-size: 11px;
+        text-decoration: none;
+        color: #0073aa;
+        font-weight: 500;
+
+        &:hover {
+            text-decoration: underline;
+        }
+    }
+}
+.file-manager-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+	gap: 15px;
+	margin: 0;
+	list-style: none;
+	max-height: 400px;
+	overflow-y: auto;
+	
+	.file-grid-item {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: 10px;
+		border: 1px solid transparent;
+		border-radius: 8px;
+		cursor: pointer;
+		transition: all 0.2s ease-in-out;
+		background: #f9f9f9;
+		text-align: center;
+
+		&:hover {
+			background: #f0f7ff;
+			border-color: #0073aa;
+			.file-icon svg {
+					filter: drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.15));
+					transform: translateY(-2px); // Thêm hiệu ứng nhấc nhẹ lên để tăng tính tương tác
+			}
+		}
+
+		&.selected {
+			background: #e7f2fa;
+			border-color: #0073aa;
+			box-shadow: 0 0 0 1px #0073aa, 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+			
+			.file-icon {
+				svg {
+					// Ép toàn bộ các phần tử path trong SVG sang màu xanh khi được chọn
+					path, .pdf, .ai, .doc, .st0 {
+						fill: #0073aa !important;
+					}
+				}
+			}
+		}
+
+		.file-icon {
+			font-size: 48px; // Biểu tượng to bự ở trên
+			margin-bottom: 8px;
+			line-height: 1;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			height: 60px;
+			width:48px;
+		}
+
+		.file-name {
+			font-size: 12px;
+			color: #333;
+			word-break: break-all;
+			display: -webkit-box;
+			-webkit-line-clamp: 2; // Giới hạn tên file trong 2 dòng
+			-webkit-box-orient: vertical;
+			overflow: hidden;
+			line-height: 1.4;
+			width: 100%;
+		}
+	}
+}

@@ -1,0 +1,54 @@
+<?php
+namespace App\Controllers\Woocommerce\Order;
+
+use App\Models\Woocommerce\Order\OrderModel;
+use App\Views\Woocommerce\Order\OrderViewer;
+
+class OrderController {
+   protected static $instance;     
+   /**
+    * khởi tạo 1 class
+   */
+   public static function get_instance(){
+      if( is_null( self::$instance ) ){ 
+            self::$instance = new self();
+      }
+      return self::$instance;
+   }
+
+   public function __construct() {      
+      add_action('admin_init',[$this,'addCustomerIdIntoCheckbox'],10);
+      OrderModel::prepareOrders();
+      
+   }
+
+   public function addCustomerIdIntoCheckbox() {
+      global $pagenow;
+      // Chỉ kích hoạt khi đang ở trang danh sách đơn hàng
+      if ( is_admin() && $pagenow === 'edit.php' && ($_GET['post_type'] ?? '') === 'shop_order' ) {
+         ob_start([$this, 'renderCustomerIdIntoCheckbox']);
+         
+      }
+
+   }
+   public function renderCustomerIdIntoCheckbox($buffer) { 
+     // Regex tìm thẻ input có ID là cb-select-{ID}
+      return preg_replace_callback(
+         '/<input id="cb-select-(\d+)"[^>]*value="(\d+)"[^>]*>/',
+         function($matches) {
+            $order_id = $matches[1];
+            $order = wc_get_order($order_id);
+            
+            if ($order) {
+               $customer_id = $order->get_customer_id();
+               // Chèn data-customer-id vào ngay sau chữ <input
+               return str_replace('<input', '<input data-customerid="' . esc_attr($customer_id) . '"', $matches[0]);
+            }            
+            return $matches[0];
+         },
+         $buffer
+       );
+      
+   }
+}
+ 

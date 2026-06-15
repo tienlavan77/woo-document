@@ -1,0 +1,314 @@
+.finance {
+   padding-right: 0;
+   border-bottom: none;
+   &__wrapper {
+      padding: 15px;
+      background-color: #fff;
+      display: flex;
+      flex-direction: row;
+      justify-content: space-between;      
+   }
+   &__buttons {
+     button {
+      float: right;
+      margin-right: 10px;
+      cursor: pointer;
+     }
+   }
+   &__column {
+      &--left {
+         width: 25%;
+      }
+      &--right {
+         width: 75%;
+         padding-left: 15px;
+      }
+   }  
+}
+.width-30 {
+   width: 30%;
+}
+.width-70 {
+   width: 70%;
+}  
+.width-100 {
+   width: 100%;
+}
+.form__field {
+   margin-bottom: 15px;
+   label {
+      display: block;      
+      margin-bottom: 10px;
+   }
+   
+   input[type="text"] {
+      width: 100%;
+      padding: 0 5px; 
+   }
+   textarea {
+      width: 100%;
+      padding: 5px; 
+   }
+   &.finance__type {
+      display: flex;
+      flex-direction: row;
+      justify-content: left;
+      flex-wrap: wrap;
+      align-items: center;    
+      padding-bottom: 15px;
+      label {
+         width: 100%;       
+      }
+      &:last-child {
+         border-bottom: 1px solid #ccc;
+      }
+   }
+   &--radio {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;     
+      input[type="radio"] {
+         margin-right: 10px;       
+         margin-top: 2px;
+      }
+      label {
+         margin-bottom: 0;
+      }
+   }
+   &--select {
+      width: 100% !important;
+      max-width: none !important;
+      padding: 0 5px; 
+   }
+   &--button {
+      float: right;
+      
+      button {
+         margin-left: 10px;
+         cursor: pointer;
+      }
+   }
+   &--cover {
+      display:flex;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      label {
+         display: block;
+         margin-bottom: 0;
+      }
+   }
+   &--boxname {
+      min-height: 30px;
+      width: 70%;
+      border: 1px solid #8c8f94;
+      border-radius: 4px;
+      padding: 4px 5px;
+      display: flex;   
+      margin-right: 15px; 
+      position: relative;
+      
+      .icon {
+         width: 30px;
+         height: 30px;
+         background-color: #ccc;
+         text-align: center;
+         line-height: 30px;
+         position: absolute;
+         right: -1px;
+         top: -1px;
+         border-bottom-right-radius: 5px;
+         border-top-right-radius: 5px;
+         cursor: pointer;
+         &:hover {
+            background-color: #bbb;            
+         }
+      }
+   }
+   &--choicefile {
+      padding: 5px 10px;
+      max-height: 30px;
+      border: 1px solid #2271b1;
+      color: #2271b1;
+      border-radius: 5px;
+      cursor: pointer;
+      text-align: center;
+      &:hover {
+         border-color: #073250;
+         color: #073250;
+      }
+   }
+   .unvisible {
+      visibility:hidden;
+   }
+   &--message {
+      color: red;
+      font-style: italic;
+      font-size: 12px;
+      margin: 4px 0;
+   }
+   &--text {
+      display: block;
+      border: 1px solid #8c8f94;
+      border-radius: 4px;
+      min-height: 30px;
+      padding: 0 5px;
+   }
+
+}
+
+.relationship_congthuc, .relationship_mota {
+   &--radio {  
+      width: 50%;      
+   }
+}
+.accountant_loaitaikhoan {
+   &--radio {
+      width: 33%;
+   }
+}
+.accountant {
+   table.finance {
+      td[accessKey=sohieu] {
+         width: 5%;
+      }
+      td[accessKey=name] {
+         width: 40%;
+      }
+      td[accessKey=description] {
+         width: 40%;
+      }
+      td[accessKey=loaitaikhoan] {
+         width: 10%;
+         text-align: center;
+      }
+   }   
+}
+.relationship {
+   table {
+      &.finance {
+         td[accessKey=sohieu] {
+            width: 35%;
+         }
+         td[accessKey=phuthuoc] {
+            width: 35%;
+         }
+         td[accessKey=hinhthuc] {
+            width: 20%;
+         }
+         td[accessKey=conthuc] {
+            width: 5%;
+            text-align: center;
+         }
+      }   
+
+   }
+}
+#cost__modal {
+   #statistical {
+      .main{
+         &__wrapper {
+            margin-top: 0;            
+         }
+      }
+   }
+}
+.statistical {
+   table {
+      &.finance {
+         td[accessKey=sohieu] {
+            width: 20%;
+         }
+         td[accessKey=status] {
+            text-align: center;
+            width: 7%;
+         }
+         td[accessKey=payment] {
+            text-align: center;
+            width: 8%;
+         }
+         td[accessKey=post_id] {
+            width: 8%;
+         }
+         td[accessKey=note] {
+            width: 17%;
+         }
+         td[accessKey=financial] {
+            width: 15%;
+         }
+         td[accessKey=total] {
+            width: 10%;
+            text-align: right;
+         }      
+      }
+   }
+}
+table.finance {
+   width: 100%;
+   border-collapse: collapse;
+   td {
+      padding: 10px 5px;
+   }
+   thead {
+      tr {
+         background-color: #ccc;
+      }
+   }
+   
+   tbody {
+      border: none;
+      tr {
+         cursor: pointer;
+         margin: 1px 0;     
+         border-left: 2px solid transparent;
+         border-right: 2px solid transparent;    
+         &:nth-child(odd) {
+            background-color: #eee;         
+         }
+         &:nth-child(even) {
+            background-color: #f9f9f9;            
+         }
+         &:hover, &.active {            
+            background-color: #ddd;
+            border-left: 2px solid #007bff;
+            border-right: 2px solid #007bff;
+         }
+         td {
+            text-wrap: wrap;
+         }
+         td[accessKey=id] {
+            width: 5%;
+         }
+         
+      }
+
+   }
+  
+}
+.pagination {
+   display: block;
+   width: 100%;
+   padding: 10px 0;
+   * {
+      margin-right: 10px;
+   }
+   &__viewer {
+      padding: 5px 10px;    
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      width: 30px;
+      text-align: center;
+   }
+   &__next, &__prev {
+      cursor: pointer;
+      padding: 5px 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      &:hover {
+         background-color: #ccc;
+      }
+   }
+}
+
+

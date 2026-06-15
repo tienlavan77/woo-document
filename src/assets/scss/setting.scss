@@ -1,0 +1,138 @@
+@use "mixins" as utils;
+
+.tsp {
+   &__content {
+      margin-top: 80px;
+      font-size: 14px;
+      box-sizing: border-box;
+
+      // --- HEADER FIXED SECTION --- 
+      .header__cover {
+         position: fixed;
+         top: utils.$admin-bar-height;
+         left: utils.$sidebar-width;
+         width: calc(100% - #{utils.$sidebar-width});
+         height: 60px; // Xóa bỏ khai báo 32px trùng lặp
+         
+         display: flex;
+         align-items: center;
+         padding: 0 24px;
+         background-color: utils.$bg-white;
+         box-shadow: 0 1px 6px rgba(0, 0, 0, 0.1); // Shadow nhẹ hơn cho hiện đại
+         z-index: 101;
+         box-sizing: border-box;
+         transition: utils.$transition;
+
+         // Xử lý khi WordPress Sidebar thu gọn (kết hợp với logic JS của bạn)
+         // &.collapse {
+         //    left: utils.$sidebar-collapsed-width;
+         //    width: calc(100% - #{utils.$sidebar-collapsed-width});
+         // }
+      }
+
+      // --- BODY SECTION ---
+      .body {
+         &__cover {
+            width: 100%;
+            display: flex;
+            justify-content: center; // Thay cho text-align center
+            
+         }
+
+         &__content {
+            background-color: utils.$bg-white;            
+            width: 210mm;
+            min-height: 297mm;
+            min-width: 480px;
+            border: 1px solid utils.$border-color;
+         }
+      }
+
+      // --- FRAME / ITEM SECTION ---
+      .frame {
+         &__header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 20px;
+            border-bottom: 1px solid utils.$border-color;
+            margin-bottom: 15px;
+
+            .__title {
+               margin: 0;
+               font-size: 1.25rem;
+               font-weight: 600;
+               color: #23282d;
+            }
+
+            .__handle {
+               margin-left: auto;
+               .__save { @include utils.wp-button; }
+            }
+         }
+
+         &__content {
+            padding: 0 20px 20px;
+         }
+
+         &__item {
+            margin-bottom: 20px;
+
+            .item__label {
+               display: flex;
+               flex-direction: column;
+               text-align: left;
+               font-size: 14px;
+               .__label {
+                  // font-weight: 600;
+                  margin-bottom: 8px;
+               }
+               .item__view {
+                  input {
+                     width:100%;
+                     margin-bottom: 0;
+                     min-height: 32px;
+                  }
+               }
+            }
+
+            // Xử lý riêng cho Image Box (Input + Buttons ngang hàng)
+            &.image-box {
+               .item__view {
+                  display: flex;
+                  gap: 10px;
+                  align-items: stretch; // Ép cao bằng nhau
+
+                  input {
+                     flex: 1;
+                     height: 32px; // Chiều cao chuẩn WP
+                     border: 1px solid #8c8f94;
+                     padding: 0 8px;
+                  }
+
+                  button {
+                     @include utils.wp-button;
+                     height: 32px; // Đảm bảo bằng input
+                     display: flex;
+                     align-items: center;
+                     white-space: nowrap;
+                  }
+               }
+            }
+           
+         }
+         &__wrapper {
+            border-bottom: 1px solid utils.$border-color-dark;
+            &:last-child {
+               border-bottom: none;
+            }
+         }
+      }
+   }
+}
+
+.collapse {
+   width: calc(100% - 36px) !important;
+   left: 36px !important;
+}
+

@@ -1,0 +1,72 @@
+<div class="print_area">
+   <div class="header_">
+       <div class="logo"><img src="/wp-content/uploads/2025/06/logo-tinsinhphat.png" class="company__logo" /></div>
+       <div class="mycompany">
+           <p><b>CTY TNHH THƯƠNG MẠI - DỊCH VỤ TÍN SINH PHÁT</b></p>
+           <p><b>Địa chỉ:</b>Số 2 Đông Hồ, Phường 8, Quận Tân Bình, TP.HCM</p>
+           <p><b>ĐT:</b>0987596879 -<b>email:</b>tien.lavan@tinsinhphuc.com</p>
+           <img src="/wp-content/uploads/2019/08/dau-cty-tinsinhphat.png" class="stampLink" />
+       </div>
+   </div>
+   <div class="customer">
+       <h2>PHIẾU GIAO HÀNG</h2>
+       <div class="customer__wrapper">
+           <div class="line">
+               <label for="" class="line__label">Kính gởi</label>
+               <div class="line__content user"><span class="bold editable sex"></span><span class="bold editable last_name"></span>&nbsp;<span class="bold editable first_name"></span></div>
+           </div>
+           <div class="line">
+               <label for="" class="line__label">Công ty</label>
+               <div class="line__content company"><span class="bold billing_company editable"></span></div>
+           </div>
+           <div class="line">
+               <label for="" class="line__label">Địa chỉ</label>
+               <div class="line__content address"><span class="bold billing_address_1 editable"></span></div>
+           </div>
+           <div class="line">
+               <label for="" class="line__label tel">Điện thoại</label>
+               <div class="line__content phonenumber"><span class="bold billing_phone editable"></span></div>
+               <label for="" class="line__label email">Email</label>
+               <div class="line__content email"><span class="bold billing_email editable"></span></div>
+           </div>
+       </div>
+   </div>
+   <div class="price_table">
+      <table class="table products">
+         <thead class="table__header">            
+            <tr class="table__row">
+               <th class="table__column align__top align__left index">STT</th>
+               <th class="table__column align__top align__left specs">Tên sản phẩm</th>
+               <th class="table__column align__top align__right unit">ĐVT</th>
+               <th class="table__column align__top align__right quantity">Số lượng</th>
+               <th class="table__column align__top align__left note">Ghi chú</th>
+               <th class="table__column align__top align__middle enableprint enableprint"></th>
+            </tr>
+         </thead>            
+         <tbody class="table__body products__list" id="products__list">            
+            <tr class="table__row hidden sample overlaycover" >
+               <td class="table__column align__top align__left index"></td>
+               <td class="table__column align__top align__left specs"></td>
+               <td class="table__column align__top align__right unit"></td>
+               <td class="table__column align__top align__right quantity"></td>
+               <td class="table__column align__top align__left note"></td>
+               <td class="table__column align__top align__middle enableprint enableprint"></td>
+            </tr>            
+         </tbody>
+      </table>
+   </div>
+   <div class="more_info">
+       <p><b>Địa chỉ giao hàng:</b><span class="shipping_address_1">{shipping_address}</span></p>
+   </div>
+   <p class="quotation-info editable">Ngày {d} tháng {m} năm {y}</p>
+   <div class="signater">
+       <div class="saler">
+           <p><span class="saler">Nhân viên kinh doanh</span></p>
+           <img src="/wp-content/uploads/2025/06/signature.png" class="signatureLink" />
+           <p class="saler_name"><span>La Văn Tiến</span>- Mobile: 0987596879</p>
+       </div>
+       <div class="customer-approve">
+           <p><span>Khách hàng ký xác nhận</span></p>
+       </div>
+   </div>
+</div>

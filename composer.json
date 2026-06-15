@@ -1,0 +1,20 @@
+{
+   "name": "tienlavan/tinsinhphat",
+   "version": "0.1.0",
+   "description": "plugin for wordpress, create, print quotation, delivery",
+   "autoload": {
+       "psr-4": {
+           "App\\": "core/",
+           "App\\Support\\": "core/Support/"
+       }
+   },
+   "require": {
+      "firebase/php-jwt": "^6.11"
+   },
+   "authors": [
+        {
+            "name": "viethackintosh",
+            "email": "viethackintosh@gmail.com"
+        }
+    ]
+}
