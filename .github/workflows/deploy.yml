@@ -8,6 +8,13 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # 👉 WORLD CLASS: Cấp quyền rõ ràng cho GITHUB_TOKEN để tránh lỗi Git 128
+    permissions:
+      contents: read
+
+    env:
+      # 👉 FIX WARNING: Ép buộc các Action chạy trên Node.js 24 theo khuyến nghị của GitHub
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Checkout code
