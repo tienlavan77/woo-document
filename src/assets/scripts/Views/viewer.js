@@ -1,6 +1,6 @@
-import Notice from "../Vendor/notice/notice";
-import Modal from "../Vendor/modal/modal";
-import FormFactory from "../Vendor/helpers/formFactory";
+import Notice from "../Vendor/notice/notice.js";
+import Modal from "../Vendor/modal/modal.js";
+import FormFactory from "../Vendor/helpers/formFactory.js";
 
 const globalNotice = new Notice().init({id: 'tsp-notice'})
 const globalModal = new Modal().init({

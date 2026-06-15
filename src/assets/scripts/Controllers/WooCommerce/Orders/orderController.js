@@ -1,13 +1,13 @@
-import Controller from '../../controller'
+import Controller from '../../controller.js'
 import OrderViewer, { QuotationCmpViewer, DeliveryCmpViewer, InvoiceCmpViewer } 
-      from '../../../Views/Woocommerce/Orders/orderViewer';
+      from '../../../Views/Woocommerce/Orders/orderViewer.js';
 // Giả định các Model đã được import đúng đường dẫn
 import OrdersModel from '../../../Models/Woocommerce/Orders/ordersModel';
 import QuotationModel from '../../../Models/Admin/Quotation/quotationModel'; 
 import DeliveryModel from '../../../Models/Admin/Delivery/deliveryModel';
 import InvoiceModel from '../../../Models/Admin/Invoice/invoiceModel'
 import DataChecker from '../../../Vendor/helpers/dataChecker'
-import DocumentController from '../../Documents/documentController';
+import DocumentController from '../../Documents/documentController.js';
 
 /**
  * 1. BASE CONTROLLER - Chứa logic xử lý cốt lõi

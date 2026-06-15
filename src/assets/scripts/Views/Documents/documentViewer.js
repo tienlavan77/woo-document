@@ -1,9 +1,9 @@
-import Viewer from '../viewer'; 
-import DragDrop from '../../Vendor/dragdrop/dragDrop';
-import UploadFiles from '../../Vendor/dragdropfile/dragDropUpload'
-import TagBuilder from '../../Vendor/helpers/tagBuilder';
+import Viewer from '../viewer.js'; 
+import DragDrop from '../../Vendor/dragdrop/dragDrop.js';
+import UploadFiles from '../../Vendor/dragdropfile/dragDropUpload.js'
+import TagBuilder from '../../Vendor/helpers/tagBuilder.js';
 import pdfobject from 'pdfobject';
-import { FILE_PDF_ICON, AI_FILE_ICON, DOC_FILE_ICON } from '../../Vendor/dragdropfile/filesSVGIcon';
+import { FILE_PDF_ICON, AI_FILE_ICON, DOC_FILE_ICON } from '../../Vendor/dragdropfile/filesSVGIcon.js';
 
 export default class DocumentViewer extends Viewer {
  

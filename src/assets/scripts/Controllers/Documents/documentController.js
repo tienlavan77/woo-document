@@ -1,6 +1,6 @@
-import Controller from '../controller'
-import DocumentModel from '../../Models/Documents/documentModel';
-import DocumentViewer from '../../Views/Documents/documentViewer';
+import Controller from '../controller.js'
+import DocumentModel from '../../Models/Documents/documentModel.js';
+import DocumentViewer from '../../Views/Documents/documentViewer.js';
 
 export default class DocumentController extends Controller {
    constructor() {
