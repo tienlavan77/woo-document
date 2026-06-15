@@ -1,0 +1,55 @@
+name: Build and Package Plugin
+
+on:
+  push:
+    branches:
+      - production
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 1. Xử lý PHP (Composer)
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mbstring, xml, ctype, iconv, intl
+
+      - name: Install Composer dependencies
+        run: composer install --no-dev --optimize-autoloader
+
+      # 2. Xử lý Frontend (Vite)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install NPM dependencies & Build Assets
+        run: |
+          npm install
+          npm run build
+
+      # 3. Đóng gói Plugin thành file ZIP (loại bỏ các file nguồn không cần thiết)
+      - name: Create Deployment Package
+        run: |
+          mkdir -p release
+          zip -r release/document-plugin.zip . \
+          -x "*.git*" \
+          -x "node_modules/*" \
+          -x "src/*" \
+          -x ".github/*" \
+          -x "vite.config.js" \
+          -x "package-lock.json" \
+          -x "composer.lock"
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: document-plugin-ready
+          path: release/document-plugin.zip
