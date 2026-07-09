@@ -227,4 +227,23 @@ class DocumentController extends Controller { // Kế thừa từ Controller
       readfile($file_path);
       exit;
    }
+
+   /**
+     * Tiếp nhận yêu cầu xóa file từ API
+     */
+   public function handleDeleteFile(WP_REST_Request $request) {
+      $path = $request->get_param('path');
+     
+      if (empty($path)) {
+         return new WP_Error('missing_param', 'Thiếu đường dẫn file cần xóa.', ['status' => 400]);
+      }
+
+      $result = $this->model->deleteFileSafely($path);
+
+      if (is_wp_error($result)) {
+         return $result; // Trả về lỗi WP_Error chuẩn kèm mã HTTP Status tương ứng
+      }
+
+      return $this->sendSuccess($result, 'Đã xóa file ra khỏi kho lưu trữ thành công! ' . $path);      
+   }
 }

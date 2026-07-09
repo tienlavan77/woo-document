@@ -66,6 +66,7 @@
 	overflow-y: auto;
 	
 	.file-grid-item {
+		position: relative;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -78,8 +79,7 @@
 		text-align: center;
 
 		&:hover {
-			background: #f0f7ff;
-			border-color: #0073aa;
+			background: #f0f7ff;		
 			.file-icon svg {
 					filter: drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.15));
 					transform: translateY(-2px); // Thêm hiệu ứng nhấc nhẹ lên để tăng tính tương tác
@@ -88,8 +88,8 @@
 
 		&.selected {
 			background: #e7f2fa;
-			border-color: #0073aa;
-			box-shadow: 0 0 0 1px #0073aa, 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+			// border-color: #0073aa;
+			// box-shadow: 0 0 0 1px #0073aa, 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 			
 			.file-icon {
 				svg {
@@ -122,6 +122,6 @@
 			overflow: hidden;
 			line-height: 1.4;
 			width: 100%;
-		}
+		}		
 	}
 }

@@ -36,12 +36,22 @@ class DocumentApi extends Api {
             [  'methods' => 'GET', // lấy file để hiện thị  
                'callback' => [$this->controller, 'handleGetFiles'],
                'args'     => $this->getCollectionParams(), // Dùng bộ validate phân trang có sẵn
-               'permission_callback' => function() {
-                  return JwtAuthenticate::JwtAuthenticate() && current_user_can('edit_shop_orders');
+               'permission_callback' => function(WP_REST_Request $request) {
+                  return JwtAuthenticate::JwtAuthenticate($request) && current_user_can('edit_shop_orders');
                }
             ]
          ]
       );
+      register_rest_route(
+      self::$namespace, 
+      '/documents/files/(?P<slug>[^/]+)/delete', 
+      [
+         [
+            'methods'             => 'DELETE',
+            'callback'            => [$this->controller, 'handleDeleteFile'],
+            'permission_callback' => [JwtAuthenticate::class, 'JwtAuthenticate']
+         ]
+      ]);    
       register_rest_route(
          self::$namespace, 
          '/documents/files/(?P<slug>[^/]+)', 
@@ -59,7 +69,8 @@ class DocumentApi extends Api {
                'permission_callback' => [JwtAuthenticate::class, 'JwtAuthenticate']
             ]
          ]
-      ); 
+      );
+    
       register_rest_route( 
          self::$namespace, 
          '/documents/upload', 
@@ -97,7 +108,8 @@ class DocumentApi extends Api {
                'permission_callback' => [JwtAuthenticate::class, 'JwtAuthenticate']
             ]
          ] 
-      ); 
+      );
+     
    }
    
    public function getDocs(WP_REST_Request $req) {

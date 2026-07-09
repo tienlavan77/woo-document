@@ -25,7 +25,10 @@ export default class DocumentViewer extends Viewer {
          .setAttributes({ className: 'button button-primary', type: 'button', disabled: true })
          .html('Xác nhận')
          .build();
-      
+      this.delFile = TagBuilder.create('button')
+         .setAttributes({className: 'button button-primary', type: 'button', disabled: true })
+         .html('Delete file')
+         .build()
       this.btnLoadMore = TagBuilder.create('a')
          .setAttributes({ href: '#', className: 'load-more-link' })
          .html('Tải thêm file...')
@@ -77,11 +80,12 @@ export default class DocumentViewer extends Viewer {
          dropList.addEventListener('click', (e) => {
             const item = e.target.closest('.file-grid-item');
             if (!item) return;
-
+            
             dropList.querySelectorAll('.file-grid-item').forEach(el => el.classList.remove('selected'));
             item.classList.add('selected');
             this.selectedFilePath = item.dataset.path;
             this.btnConfirm.disabled = false;
+            this.delFile.disabled = false;
          });
       } 
 
@@ -95,12 +99,17 @@ export default class DocumentViewer extends Viewer {
     * @returns {Modal} Trả về đối tượng Modal
     */
    showUploadModal(documentData, listOrders, callbacks) {
-      const { onConfirm, onLoadMore, onAutoUpload } = callbacks;
+      const { onConfirm, onLoadMore, onAutoUpload, deleteFile } = callbacks;
 
       this.dragDrop.resetDragDrop(); // Đặt lại trạng thái của DragDrop trước khi hiển thị modal
       this.uploadFiles.resetDragDrop(); // Đặt lại trạng thái upload file
       this.selectedFilePath = null; // Reset đường dẫn file đã chọn
-      this.btnConfirm.disabled = true; // Vô hiệu hóa nút xác nhận ban đầu
+      let selectedItem = this.uploadFiles.data.dropList.querySelector('.file-grid-item.selected')
+      if (! selectedItem) {
+         this.btnConfirm.disabled = true; // Vô hiệu hóa nút xác nhận ban đầu
+         this.delFile.disabled = true
+
+      }
 
       // 1. Tự động đưa đơn hàng hiện tại (được click) vào khung drop-zone
       const currentOrderNode = TagBuilder.create('li')
@@ -132,6 +141,15 @@ export default class DocumentViewer extends Viewer {
          e.preventDefault();
          onLoadMore();
       };
+      this.delFile.onclick = () => {
+         const selectedFile = this.uploadFiles.data.dropList.querySelector('.file-grid-item.selected');
+         if (! selectedFile ) return;
+         let pathFile = selectedFile.dataset.path; 
+         const fileName = selectedFile.querySelector('.file-name').innerText;
+         
+         deleteFile(pathFile, fileName,  selectedFile)
+         // selectedFile.remove()
+      }
 
       return this.modal        
          .title(`Upload tài liệu cho đơn hàng #${documentData.ID}`)
@@ -139,7 +157,7 @@ export default class DocumentViewer extends Viewer {
          .maxWidth('820px') // Thu nhỏ lại một chút so với Preview (870px)
          .footer(true)
          .content([this.form])         
-         .footerContent([this.btnConfirm])
+         .footerContent([this.delFile, this.btnConfirm])
          .open()
    }
 
@@ -165,7 +183,7 @@ export default class DocumentViewer extends Viewer {
       const node = this._createFileNode(file, grid);
       grid.prepend(node);
    }
-
+ 
    /**
     * Helper để tạo cấu trúc DOM cho một item file
     * @param {Object} file - Thông tin tệp
@@ -191,7 +209,8 @@ export default class DocumentViewer extends Viewer {
          })
          .append([
             TagBuilder.create('div').setAttributes({ className: 'file-icon' }).html(icon).build(),
-            TagBuilder.create('span').setAttributes({ className: 'file-name' }).html(file.name).build()
+            TagBuilder.create('span').setAttributes({ className: 'file-name' }).html(file.name).build(),
+           
          ])
          .build();
 

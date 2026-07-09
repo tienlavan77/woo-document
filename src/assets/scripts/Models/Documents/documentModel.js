@@ -51,7 +51,12 @@ export default class DocumentModel extends Model {
          'Authorization': `Bearer ${this._token}`
       });
    }
-
+   async deleteFile(path) {
+      const slug = path.split('/').pop().replace(/\.pdf$/i, '');
+      return await this._httpDelete(`${this.api}/files/${slug}/delete`,{ path },{
+         'Authorization': `Bearer ${this._token}`
+      })
+   }
    /**
     * Gán tài liệu cho danh sách đơn hàng
     * @param {Object} payload { relative_path, order_ids, doc_type }

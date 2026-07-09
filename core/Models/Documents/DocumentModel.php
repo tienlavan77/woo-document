@@ -233,4 +233,38 @@ class DocumentModel {
         
         return new \WP_Error('file_not_found', 'Tài liệu không tồn tại trên hệ thống.', ['status' => 404]);
     }
+
+    /**
+     * Xóa file vật lý một cách an toàn
+     * @param string $relative_path Đường dẫn tương đối của file (Ví dụ: 'order_documents/Invoice-4707.pdf')
+     */
+    public function deleteFileSafely($path) {
+        $clean_path = wp_normalize_path(sanitize_text_field($path));
+
+        // 1. CHẶN BẢO MẬT: Không cho phép chứa dấu vết di chuyển thư mục ngược dòng (../)
+        if (strpos($clean_path, '..') !== false || empty($clean_path)) {
+            return new \WP_Error('security_error', 'Đường dẫn file không hợp lệ hoặc không an toàn.', ['status' => 400]);
+        }
+
+        $upload_dir = wp_upload_dir();
+        $absolute_path = wp_normalize_path($upload_dir['basedir'] . '/' . $clean_path);
+
+        // 2. CHẶN BẢO MẬT: Ép buộc file cần xóa phải nằm TRONG 1 trong 2 thư mục chỉ định
+        $is_in_new_dir    = (strpos($absolute_path, wp_normalize_path($this->new_dir)) === 0);
+        $is_in_legacy_dir = (strpos($absolute_path, wp_normalize_path($this->legacy_dir)) === 0);
+
+        if (!$is_in_new_dir && !$is_in_legacy_dir) {
+            return new \WP_Error('permission_denied', 'Bạn không có quyền xóa file nằm ngoài kho lưu trữ.', ['status' => 403]);
+        }
+
+        // 3. Thực hiện xóa file
+        if (file_exists($absolute_path) && is_file($absolute_path)) {
+            if (unlink($absolute_path)) {
+                return true;
+            }
+            return new \WP_Error('delete_failed', 'Lỗi hệ thống: Không thể thực hiện xóa file.', ['status' => 500]);
+        }
+
+        return new \WP_Error('file_not_found', 'File không tồn tại hoặc đã bị xóa từ trước.', ['status' => 404]);
+    }
 }

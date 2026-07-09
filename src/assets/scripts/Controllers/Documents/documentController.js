@@ -125,6 +125,16 @@ export default class DocumentController extends Controller {
             } else {
                this.viewer.showNotice(res?.status?.message || 'Lỗi tải file', 'error');
             }
+         },
+         deleteFile: async (path, file, selectedFile) => {
+            this.viewer.showNotice(`Xoá file ${file}`, 'info')
+            const res = await this.model.deleteFile(path);
+             if (res?.status?.code === 200) {
+               this.viewer.showNotice('Xoá file thành công!', 'success');
+               selectedFile.remove()
+            } else {
+               this.viewer.showNotice(res?.status?.message || 'Lỗi tải file', 'error');
+            }
          }
       });
 
