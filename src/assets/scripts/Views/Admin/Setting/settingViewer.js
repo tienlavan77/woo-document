@@ -12,6 +12,7 @@ export default class SettingViewer extends LayoutViewer {
 			// 1. Cấu hình thông tin cơ bản cho Viewer
 			this.id = 'tsp_setting';
 			this.header.title = 'Setting';
+			this.isAdmin = document.getElementById(this.id)?.dataset.admin === '1';
 
 			/**
 			 * Lưu trữ các element để Controller có thể truy cập.
@@ -33,4 +34,3 @@ export default class SettingViewer extends LayoutViewer {
 		console.log("SettingViewer: UI Components initialized.");
 	}
 }
-

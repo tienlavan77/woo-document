@@ -1,0 +1,102 @@
+// abstracts/_color.scss
+// Bộ màu chuẩn hoá cho In Tín Sinh Phát — Light / Dark mode
+// Dùng CSS Custom Properties để có thể đổi theme bằng JS mà không cần build lại CSS
+
+:root {
+  // ===== LIGHT MODE (mặc định) =====
+
+  // Brand
+  --color-primary: #1a2744;          // navy
+  --color-primary-hover: #0f1829;
+  --color-primary-soft: #eef1f6;     // nền nhạt: badge, hover nhẹ
+
+  --color-secondary: #c9a84c;        // gold
+  --color-secondary-hover: #b8933a;
+  --color-secondary-soft: #faf5e8;
+
+  // Nền / bề mặt / viền
+  --color-bg: #ffffff;
+  --color-surface: #f7f8fa;
+  --color-border: #e5e7eb;
+  --color-border-strong: #c7cbd1;
+
+  // Chữ
+  --color-text: #1a2233;
+  --color-text-secondary: #6b7280;
+  --color-text-inverse: #ffffff;
+
+  // Semantic (trạng thái)
+  --color-success: #16a34a;
+  --color-success-hover: #128a3e;
+  --color-success-soft: #e7f7ed;
+  --color-warning: #d97706;
+  --color-warning-soft: #fdf3e3;
+  --color-error: #dc2626;
+  --color-error-soft: #fbe9e9;
+  --color-info: #2563eb;
+  --color-info-soft: #e8f0fe;
+  --color-info-soft-strong: #d7e6fd;
+
+  // Toggle / switch
+  --color-toggle-off: #94a0b0;
+  --color-knob: linear-gradient(180deg, #ffffff 0%, #f0f0f1 100%);
+  --color-knob-border: #ffffff;
+
+  // Bảng / tài liệu in ấn
+  --color-table-border: #333333;
+
+  // Lớp phủ nền (modal, overlay)
+  --color-overlay: rgba(13, 20, 32, 0.6);
+
+  // Bóng đổ
+  --shadow-color: rgba(26, 39, 68, 0.08);
+}
+
+// ===== DARK MODE =====
+[data-theme="dark"] {
+  // Brand (đảo vai trò: gold nổi bật hơn trên nền tối)
+  --color-primary: #c9a84c;
+  --color-primary-hover: #d9bd73;
+  --color-primary-soft: #2a2417;
+
+  --color-secondary: #3d5170;
+  --color-secondary-hover: #4d6488;
+  --color-secondary-soft: #1a2333;
+
+  // Nền / bề mặt / viền
+  --color-bg: #0d1420;
+  --color-surface: #161f2e;
+  --color-border: #26334a;
+  --color-border-strong: #384863;
+
+  // Chữ
+  --color-text: #f2f4f7;
+  --color-text-secondary: #9aa5b8;
+  --color-text-inverse: #0d1420;
+
+  // Semantic (trạng thái)
+  --color-success: #22c55e;
+  --color-success-hover: #34d970;
+  --color-success-soft: #12291c;
+  --color-warning: #f59e0b;
+  --color-warning-soft: #2c2313;
+  --color-error: #ef4444;
+  --color-error-soft: #2c1717;
+  --color-info: #3b82f6;
+  --color-info-soft: #16233b;
+  --color-info-soft-strong: #1c2c48;
+
+  // Toggle / switch
+  --color-toggle-off: #3a4557;
+  --color-knob: linear-gradient(180deg, #e7ebf2 0%, #c9d2e0 100%);
+  --color-knob-border: #161f2e;
+
+  // Bảng / tài liệu in ấn (nhạt hơn để dễ nhìn trên nền tối)
+  --color-table-border: #5a6b85;
+
+  // Lớp phủ nền (modal, overlay) — đậm hơn vì nền đã tối sẵn
+  --color-overlay: rgba(0, 0, 0, 0.75);
+
+  // Bóng đổ
+  --shadow-color: rgba(0, 0, 0, 0.4);
+}

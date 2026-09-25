@@ -18,8 +18,7 @@ export default class CompanyViewer extends PartialViewer {
                   name: 'name',
                   placeholder: 'Put your company\'s name',
                   className,
-               
-               }
+}
             },
          address:{
             label: 'Address',
@@ -75,17 +74,6 @@ export default class CompanyViewer extends PartialViewer {
     
    }
 
-   _showNotice(message, style) {
-      if (this.notice) {
-         this.notice.open({            
-            message,
-            icon: true,
-            style,
-            timer: 1500,            
-         });
-      }
-   }
- 
    _viewImage (element) {  
       let link = element.link.value;
       this.modal.open({title : 'Image viewer company stamp'})
@@ -104,5 +92,3 @@ export default class CompanyViewer extends PartialViewer {
       
    }
 }
-
- 

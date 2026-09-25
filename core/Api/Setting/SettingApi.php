@@ -41,13 +41,40 @@ class SettingApi extends Api {
          [
             [ 'methods' => 'GET', 
                'callback' => [$this,'getCompanySetting'],
-               'permission_callback' =>[JwtAuthenticate::class, 'JwtAuthenticate']
+               'permission_callback' => [$this, 'adminPermission']
             ],
             [
                'methods' => 'POST', 
                'callback' => [$this,'setCompanySetting'],
-               'permission_callback' =>[JwtAuthenticate::class, 'JwtAuthenticate']
+               'permission_callback' => [$this, 'adminPermission']
             ],            
+         ]
+      );
+      register_rest_route(
+         self::$namespace,
+         '/settings/system',
+         [
+            [
+               'methods' => 'GET',
+               'callback' => [$this, 'getSystemSetting'],
+               'permission_callback' => [$this, 'adminPermission'],
+            ],
+            [
+               'methods' => 'POST',
+               'callback' => [$this, 'setSystemSetting'],
+               'permission_callback' => [$this, 'adminPermission'],
+            ],
+         ]
+      );
+      register_rest_route(
+         self::$namespace,
+         '/settings/system/browse',
+         [
+            [
+               'methods' => 'GET',
+               'callback' => [$this, 'browseSystemFolder'],
+               'permission_callback' => [$this, 'adminPermission'],
+            ],
          ]
       );
       register_rest_route( 
@@ -66,7 +93,64 @@ class SettingApi extends Api {
             ]
          ]
       );
-        
+   }
+
+   public function adminPermission(WP_REST_Request $request) {
+      $authenticated = JwtAuthenticate::JwtAuthenticate($request);
+      if (is_wp_error($authenticated)) {
+         return $authenticated;
+      }
+
+      if (!current_user_can('manage_options')) {
+         return new WP_Error('rest_forbidden', 'Chỉ admin mới được quản lý cấu hình này.', ['status' => 403]);
+      }
+
+      return true;
+   }
+
+   /**
+    * Admin-only system folder settings.
+    */
+   public function getSystemSetting(WP_REST_Request $request) {
+      return new WP_REST_Response([
+         'status' => [
+            'code' => 200,
+            'message' => 'Lấy cấu hình System thành công.',
+            'data' => SettingModel::getSystemSetting(),
+         ],
+      ], 200);
+   }
+
+   public function setSystemSetting(WP_REST_Request $request) {
+      $data = $request->get_json_params();
+      $result = SettingModel::setSystemSetting(is_array($data) ? $data : []);
+
+      if (is_wp_error($result)) {
+         return $result;
+      }
+
+      return new WP_REST_Response([
+         'status' => [
+            'code' => 200,
+            'message' => 'Lưu cấu hình System thành công.',
+            'data' => $result,
+         ],
+      ], 200);
+   }
+
+   public function browseSystemFolder(WP_REST_Request $request) {
+      $result = SettingModel::browseSystemFolder($request->get_param('path'));
+      if (is_wp_error($result)) {
+         return $result;
+      }
+
+      return new WP_REST_Response([
+         'status' => [
+            'code' => 200,
+            'message' => 'Lấy danh sách folder thành công.',
+            'data' => $result,
+         ],
+      ], 200);
    }
 
    /**

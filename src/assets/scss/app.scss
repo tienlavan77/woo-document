@@ -1,15 +1,20 @@
+@use "colors";
 @use "variables";
+@use './button.scss';
+// @use './wp-admin.scss';
 @use '../scripts/Vendor/notice/scss/notice.scss';
 @use '../scripts/Vendor/modal/scss/modal.scss';
 @use '../scripts/Vendor/dragdrop/scss/dragdrop.scss';
-@use '../scripts/Vendor/dragdropfile/scss/dragdropfile.scss';
+@use '../scripts/Vendor/tabs/scss/tab.scss';
+
 @use "./element.scss";
 @use "./setting.scss";
-@use './accountant.scss';
+// @use './accountant.scss';
 @use './print.scss';
 @use './quotation.scss';
 @use './panel.scss';
 @use './file-manager.scss';
+@use './print-files.scss';
 
 * {
 	box-sizing: border-box;

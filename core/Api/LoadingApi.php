@@ -6,6 +6,7 @@ use App\Api\Setting\SettingApi;
 use App\Api\Templates\TemplatesApi;
 use App\Api\Authenticate\AuthenticateApi;
 use App\Api\Documents\DocumentApi;
+use App\Api\PrintFiles\PrintFileApi;
 
 class LoadingApi {
 	private $hooks;
@@ -14,6 +15,7 @@ class LoadingApi {
 		TemplatesApi::class,
 		AuthenticateApi::class,
 		DocumentApi::class,
+		PrintFileApi::class,
 	];
 	
 	public function __construct(HookManager $hooks) {

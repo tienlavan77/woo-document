@@ -77,14 +77,14 @@ export default class ComponentBaseController {
 			const statusMap = {
 				200: 'success',
 				201: 'warning',
-				202: 'dangerous'
+				202: 'error'
 			};
 			const style = statusMap[response.status.code] || 'info';
 
-			this.viewer._showNotice(response.status.message, style);
+			this.viewer.showNotice(response.status.message, style);
 		} catch (error) {
 			console.error("Save error:", error);
-			this.viewer._showNotice("Đã có lỗi xảy ra khi lưu dữ liệu", "dangerous");
+			this.viewer.showNotice("Đã có lỗi xảy ra khi lưu dữ liệu", "error");
 		}
 	};
 

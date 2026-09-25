@@ -1,17 +1,21 @@
 <?php
 namespace App\Models\Documents;
 
+use App\Support\SystemFolderManager;
+
 class DocumentModel {
     private $new_dir;
+    private $new_relative_prefix;
     private $legacy_dir;
     private $upload_base_url;
 
     public function __construct() {
         $upload_dir = wp_upload_dir();
         $this->upload_base_url = $upload_dir['baseurl'] . '/';
-        
-        // Thư mục mới và cũ cấu hình theo đường dẫn tuyệt đối trên Server
-        $this->new_dir    = $upload_dir['basedir'] . '/order_documents/';
+
+        $configured_folder = SystemFolderManager::getFolder('document_folder');
+        $this->new_dir = trailingslashit($configured_folder['absolute_path']);
+        $this->new_relative_prefix = $configured_folder['relative_prefix'];
         $this->legacy_dir = $upload_dir['basedir'] . '/myoptions/moreinfo/';
 
         // Tự động tạo thư mục mới nếu chưa có
@@ -21,45 +25,42 @@ class DocumentModel {
     /**
      * Phương thức lõi: Tổng hợp file từ nhiều nguồn, xử lý sắp xếp và phân trang ảo.
      * Sử dụng Transient API để tránh quét ổ cứng liên tục, cải thiện tốc độ API.
-     * 
+     *
      * @param int $page Trang hiện tại
      * @param int $per_page Số file trên mỗi trang (12 file)
      */
     public function getCompiledFiles($page = 1, $per_page = 12) {
-        $cache_key = 'doc_files_p' . $page . '_c' . $per_page;
-        $cached_data = get_transient($cache_key);
-
-        if ($cached_data !== false) {
-            return $cached_data;
-        }
-
         $all_files = [];
+        $document_directories = SystemFolderManager::getDocumentDirectories();
 
-        // 1. Quét thư mục mới
-        if (file_exists($this->new_dir)) {
-            $files = array_diff(scandir($this->new_dir), ['.', '..']);
-            foreach ($files as $file) {
-                $path = $this->new_dir . $file;
-                if (is_file($path)) {
-                    $all_files[] = $this->buildFileInfoObject($file, $path, 'order_documents/' . $file);
+        // Hợp nhất file PDF từ cả kho mới và kho cũ trước khi phân trang.
+        foreach ($document_directories as [$directory, $relative_prefix]) {
+            if (!is_dir($directory)) {
+                continue;
+            }
+
+            foreach (array_diff(scandir($directory), ['.', '..']) as $file) {
+                $path = trailingslashit($directory) . $file;
+                if (is_file($path) && strtolower(pathinfo($file, PATHINFO_EXTENSION)) === 'pdf') {
+                    $all_files[] = $this->buildFileInfoObject($file, $path, $relative_prefix . $file);
                 }
             }
         }
 
-        // 2. Quét thư mục cũ (Legacy Folder)
-        if (file_exists($this->legacy_dir)) {
-            $legacy_files = array_diff(scandir($this->legacy_dir), ['.', '..']);
-            foreach ($legacy_files as $file) {
-                $path = $this->legacy_dir . $file;
-                if (is_file($path)) {
-                    $all_files[] = $this->buildFileInfoObject($file, $path, 'myoptions/moreinfo/' . $file);
-                }
-            }
-        }
-
-        // Sắp xếp theo thứ tự thời gian giảm dần (LIFO) để người dùng thấy file vừa upload ngay lập tức
+        // Sắp xếp toàn bộ danh sách theo thời gian chỉnh sửa mới nhất trước.
         usort($all_files, function($a, $b) {
-            return $b['timestamp'] <=> $a['timestamp'];
+            $timestamp_a = (int) ($a['timestamp'] ?? 0);
+            $timestamp_b = (int) ($b['timestamp'] ?? 0);
+
+            if ($timestamp_a !== $timestamp_b) {
+                return $timestamp_b <=> $timestamp_a;
+            }
+
+            // Giữ thứ tự ổn định khi filesystem trả về cùng một timestamp.
+            return strnatcasecmp(
+                (string) ($b['relative_path'] ?? ''),
+                (string) ($a['relative_path'] ?? '')
+            );
         });
 
         // Pagination Logic: Vì chúng ta lấy dữ liệu từ filesystem nên phải tự thực hiện slice mảng
@@ -73,9 +74,7 @@ class DocumentModel {
             'has_more'     => ($offset + $per_page) < $total_files
         ];
 
-        // Cache kết quả trong 5 phút để giảm tải I/O ổ cứng
-        set_transient($cache_key, $result, 5 * MINUTE_IN_SECONDS);
-
+        // Không cache danh sách này: modal cần phản ánh ngay file mới từ cả hai thư mục.
         return $result;
     }
 
@@ -88,7 +87,7 @@ class DocumentModel {
         // WordPress lưu transient trong bảng options với tiền tố _transient_
         $wpdb->query("DELETE FROM $wpdb->options WHERE option_name LIKE '_transient_doc_files_%'");
         $wpdb->query("DELETE FROM $wpdb->options WHERE option_name LIKE '_transient_timeout_doc_files_%'");
-        
+
         if (defined('WP_DEBUG') && WP_DEBUG) {
             error_log('DocumentModel: File cache cleared via SQL wildcard.');
         }
@@ -98,6 +97,8 @@ class DocumentModel {
      * Hàm phụ trợ chuẩn hóa object thông tin file
      */
     private function buildFileInfoObject($file_name, $full_path, $relative_path) {
+        clearstatcache(true, $full_path);
+
         return [
             'name'          => $file_name,
             'relative_path' => $relative_path, // Dùng cái này để lưu vào Order Meta nhằm phân biệt cũ/mới
@@ -123,7 +124,7 @@ class DocumentModel {
             'delivery'  => 'deliveryDocument'
         ];
         $target_key = $type_map[$doc_type] ?? $doc_type;
-        
+
         $success_count = 0;
 
         foreach ($order_ids as $order_id) {
@@ -139,7 +140,7 @@ class DocumentModel {
 
                 // Cập nhật giá trị (nếu rỗng thì coi như xóa/unassign)
                 $current_docs[$target_key] = sanitize_text_field($relative_path);
-                
+
                 $order->update_meta_data('orders', $current_docs);
                 $order->save();
                 $success_count++;
@@ -151,10 +152,14 @@ class DocumentModel {
         return $this->new_dir;
     }
 
+    public function getNewRelativePrefix() {
+        return $this->new_relative_prefix;
+    }
+
     /**
      * Lấy danh sách các đơn hàng chưa có loại tài liệu cụ thể
      * Tối ưu bằng cách chỉ lấy 50 đơn hàng gần nhất
-     * 
+     *
      * @param string $doc_type Loại tài liệu cần kiểm tra (invoice|quotation|delivery)
      * @return array Danh sách mảng chứa id, number và customer
      */
@@ -179,7 +184,7 @@ class DocumentModel {
         foreach ($order_ids as $id) {
             $order = wc_get_order($id);
             $meta = $order->get_meta('orders', true);
-            
+
             // Nếu meta trống hoặc key tài liệu cụ thể trống
             if (!is_array($meta) || empty($meta[$target_key])) {
                 $results[] = [
@@ -203,34 +208,25 @@ class DocumentModel {
         $clean_slug = basename(urldecode($slug));
 
         if ($is_debug) error_log('getFileDetailByPath: Processing slug: ' . $clean_slug);
-        
+
         $filename = $clean_slug;
         if (!str_ends_with(strtolower($filename), '.pdf')) {
             $filename .= '.pdf';
         }
 
         if ($is_debug) error_log('getFileDetailByPath: Looking for filename: ' . $filename);
-        
-        $base_dir = wp_upload_dir()['basedir'] . '/';
 
-        // 1. Tìm trong thư mục mới
-        $relative_new = 'order_documents/' . $filename;
-        if ($is_debug) error_log('getFileDetailByPath: Checking new path: ' . $base_dir . $relative_new);
-        
-        if (file_exists($base_dir . $relative_new)) {
-            return $this->buildFileInfoObject($filename, $base_dir . $relative_new, $relative_new);
-        }
+        foreach (SystemFolderManager::getDocumentDirectories() as [$directory, $relative_prefix]) {
+            $file_path = trailingslashit($directory) . $filename;
+            if ($is_debug) error_log('getFileDetailByPath: Checking path: ' . $file_path);
 
-        // 2. Tìm trong thư mục cũ (Legacy)
-        $relative_legacy = 'myoptions/moreinfo/' . $filename;
-        if ($is_debug) error_log('getFileDetailByPath: Checking legacy path: ' . $base_dir . $relative_legacy);
-        
-        if (file_exists($base_dir . $relative_legacy)) {
-            return $this->buildFileInfoObject($filename, $base_dir . $relative_legacy, $relative_legacy);
+            if (is_file($file_path)) {
+                return $this->buildFileInfoObject($filename, $file_path, $relative_prefix . $filename);
+            }
         }
 
         if ($is_debug) error_log('getFileDetailByPath: File not found after checking all paths for slug: ' . $slug);
-        
+
         return new \WP_Error('file_not_found', 'Tài liệu không tồn tại trên hệ thống.', ['status' => 404]);
     }
 
@@ -249,17 +245,24 @@ class DocumentModel {
         $upload_dir = wp_upload_dir();
         $absolute_path = wp_normalize_path($upload_dir['basedir'] . '/' . $clean_path);
 
-        // 2. CHẶN BẢO MẬT: Ép buộc file cần xóa phải nằm TRONG 1 trong 2 thư mục chỉ định
-        $is_in_new_dir    = (strpos($absolute_path, wp_normalize_path($this->new_dir)) === 0);
-        $is_in_legacy_dir = (strpos($absolute_path, wp_normalize_path($this->legacy_dir)) === 0);
+        // 2. CHẶN BẢO MẬT: Chỉ cho phép xóa trong các kho tài liệu đã cấu hình.
+        $is_in_document_dir = false;
+        foreach (SystemFolderManager::getDocumentDirectories() as [$directory]) {
+            $document_dir = trailingslashit(wp_normalize_path($directory));
+            if (strpos($absolute_path, $document_dir) === 0) {
+                $is_in_document_dir = true;
+                break;
+            }
+        }
 
-        if (!$is_in_new_dir && !$is_in_legacy_dir) {
+        if (!$is_in_document_dir) {
             return new \WP_Error('permission_denied', 'Bạn không có quyền xóa file nằm ngoài kho lưu trữ.', ['status' => 403]);
         }
 
         // 3. Thực hiện xóa file
         if (file_exists($absolute_path) && is_file($absolute_path)) {
             if (unlink($absolute_path)) {
+                $this->clearFileCache();
                 return true;
             }
             return new \WP_Error('delete_failed', 'Lỗi hệ thống: Không thể thực hiện xóa file.', ['status' => 500]);

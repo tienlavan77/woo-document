@@ -2,7 +2,6 @@
 namespace App\Controllers\Woocommerce\Order;
 
 use App\Models\Woocommerce\Order\OrderModel;
-use App\Views\Woocommerce\Order\OrderViewer;
 
 class OrderController {
    protected static $instance;     
@@ -47,8 +46,9 @@ class OrderController {
             return $matches[0];
          },
          $buffer
-       );
+      );
       
    }
+
 }
  

@@ -36,7 +36,7 @@ class TemplatesApi extends Api {
 			self::$namespace,
          // (?P<type>...) bắt group loại template: chỉ chấp nhận 1 trong 3 chữ: deliveries, quotations, hoặc invoice
          // (?P<slug>...) bắt group tên file template: chấp nhận chữ, số và dấu gạch ngang (-)
-			'/template/(?P<type>deliveries|quotations|invoice)/(?P<slug>[a-zA-Z0-9-]+)',
+			'/template/(?P<type>deliveries|quotations|invoice|prints)/(?P<slug>[a-zA-Z0-9-]+)',
 			[
 				[
 					'methods'             => 'GET', // Phương thức HTTP GET
@@ -61,7 +61,8 @@ class TemplatesApi extends Api {
 		$type_mapping = [
 			'deliveries' => 'delivery',
 			'quotations' => 'quotation',
-			'invoice'    => 'vatinvoice'
+			'invoice'    => 'vatinvoice',
+			'prints'     => 'prints',
 		];
 
       // Nếu tìm thấy trong mảng mapping thì lấy, nếu không (dự phòng) thì giữ nguyên giá trị
@@ -79,7 +80,12 @@ class TemplatesApi extends Api {
 	public function getTemplate($slug, $type) {
       // Bảo mật: Đảm bảo slug không chứa các ký tự điều hướng đường dẫn (../)
       $slug = basename($slug);
-		$template = sprintf("%s/%s/%s.min.html", TEMPLATES_DIR_DOCUMENT, $type, $slug);
+		$template = $type === ''
+			? sprintf("%s/%s.html", TEMPLATES_DIR_DOCUMENT, $slug)
+			: sprintf("%s/%s/%s.min.html", TEMPLATES_DIR_DOCUMENT, $type, $slug);
+		if ($type !== '' && !file_exists($template)) {
+			$template = sprintf("%s/%s/%s.html", TEMPLATES_DIR_DOCUMENT, $type, $slug);
+		}
       
       // Kiểm tra file có tồn tại trên máy chủ hay không
 		if (!file_exists($template)) { 
@@ -88,7 +94,7 @@ class TemplatesApi extends Api {
 		} 
 
       // Nếu file tồn tại, đọc nội dung file và đóng gói vào WP_REST_Response với mã 200 (Thành công)
-		return new WP_REST_Response([
+		$response = new WP_REST_Response([
 			'status' => [
 				'code'    => 200, 
 				'message' => 'Lấy file giao diện thành công.', 
@@ -98,5 +104,9 @@ class TemplatesApi extends Api {
 				]
 			]
 		], 200);
+		$response->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+		$response->header('Pragma', 'no-cache');
+		$response->header('Expires', '0');
+		return $response;
 	}   
 }

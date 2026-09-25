@@ -106,6 +106,10 @@ export default class Model {
 		return HttpClient.post(url, data, headers);
 	}
 
+	_httpPut(url, data, headers = {}) {
+		return HttpClient.put(url, data, headers);
+	}
+
 	_httpDelete(url, data, headers = {}) {
 		return HttpClient.delete(url, data, headers);
 	}

@@ -12,6 +12,7 @@ export default class HttpClient {
 		headers: {
 			"Content-Type": "application/json",
 			'X-WP-Nonce': this.wpNonce , // Sử dụng nonce từ meta tag nếu có
+			'X-TSP-Plugin-Request': 'document',
 		},
 		redirect: "follow",
 		referrerPolicy: "no-referrer",
@@ -44,8 +45,21 @@ export default class HttpClient {
 			
 			const response = await fetch(url, options);
 
-			// Chuyển đổi dữ liệu sang JSON
-			const data = await response.json();
+			// Đọc text trước để không phát sinh lỗi JSON mơ hồ khi PHP trả warning HTML.
+			const responseText = await response.text();
+			let data;
+			try {
+				data = responseText ? JSON.parse(responseText) : {};
+			} catch (parseError) {
+				const serverMessage = responseText
+					.replace(/<[^>]*>/g, ' ')
+					.replace(/&(?:lt|gt|amp|quot|#039);/g, (entity) => ({
+						'&lt;': '<', '&gt;': '>', '&amp;': '&', '&quot;': '"', '&#039;': "'",
+					}[entity] || entity))
+					.replace(/\s+/g, ' ')
+					.trim();
+				throw new Error(serverMessage || `Máy chủ trả về dữ liệu không hợp lệ (${response.status}).`);
+			}
 
 			// Nếu HTTP status không nằm trong khoảng 200-299
 			if (!response.ok) {
@@ -94,6 +108,14 @@ export default class HttpClient {
 			body: isFormData ? body : JSON.stringify(body) // KHÔNG stringify FormData
     };
 		return this.request(url, options);
+	}
+
+	static put(url, body, headers = {}) {
+		return this.request(url, {
+			method: 'PUT',
+			headers: { 'Content-Type': 'application/json', ...headers },
+			body: JSON.stringify(body),
+		});
 	}
 
 	/**

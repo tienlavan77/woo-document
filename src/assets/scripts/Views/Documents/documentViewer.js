@@ -1,16 +1,17 @@
-import Viewer from '../viewer.js'; 
+import Viewer from '../viewer.js';
 import DragDrop from '../../Vendor/dragdrop/dragDrop.js';
 import UploadFiles from '../../Vendor/dragdropfile/dragDropUpload.js'
 import TagBuilder from '../../Vendor/helpers/tagBuilder.js';
 import pdfobject from 'pdfobject';
+
 import { FILE_PDF_ICON, AI_FILE_ICON, DOC_FILE_ICON } from '../../Vendor/dragdropfile/filesSVGIcon.js';
 
 export default class DocumentViewer extends Viewer {
- 
    constructor() {
       super();
-      this.dragDrop = new DragDrop();      
-      this.uploadFiles = new UploadFiles(); 
+      this.dragDrop = new DragDrop();
+      this.uploadFiles = new UploadFiles();
+
       this.init();
    }
 
@@ -19,7 +20,7 @@ export default class DocumentViewer extends Viewer {
     */
    init() {
       this.dragDrop.init({ id: 'orders-drag-drop' }); // Khởi tạo DragDrop với ID của container
-      
+
       // Khởi tạo các nút điều khiển cố định để tránh trùng lặp DOM khi mở lại modal
       this.btnConfirm = TagBuilder.create('button')
          .setAttributes({ className: 'button button-primary', type: 'button', disabled: true })
@@ -33,9 +34,9 @@ export default class DocumentViewer extends Viewer {
          .setAttributes({ href: '#', className: 'load-more-link' })
          .html('Tải thêm file...')
          .build();
-      
+
       this._uploadFilesRebuilder(); // Khởi tạo UploadFiles
-      this.form = this._documentFormBuilder(); // Xây dựng form upload tài liệu   
+      this.form = this._documentFormBuilder(); // Xây dựng form upload tài liệu
    }
 
    /**
@@ -45,6 +46,8 @@ export default class DocumentViewer extends Viewer {
     */
    _uploadFilesRebuilder() {
       this.uploadFiles.init({ id: 'document-upload-files' }); // Khởi tạo UploadFiles với ID của container
+      this.uploadFiles.accept('.pdf');
+      this.uploadFiles.multiple(false);
 
       // Lấy các phần tử cần thiết từ dữ liệu của uploadFiles
       const { main, dropList, input, label, dragArea, message } = this.uploadFiles.data;
@@ -61,10 +64,7 @@ export default class DocumentViewer extends Viewer {
          ])
          .build();
       main.classList.add('document-upload-form')
-      main.prepend(
-         TagBuilder.create('h3').setAttributes({ className: 'section-title' }).html('2. Tài liệu').build(),
-         headerInfo
-      );
+      main.prepend(headerInfo);
 
       if (input && label && dragArea && message) {
          input.remove(); // Chuyển input làm con trực tiếp của dragArea
@@ -80,17 +80,17 @@ export default class DocumentViewer extends Viewer {
          dropList.addEventListener('click', (e) => {
             const item = e.target.closest('.file-grid-item');
             if (!item) return;
-            
+
             dropList.querySelectorAll('.file-grid-item').forEach(el => el.classList.remove('selected'));
             item.classList.add('selected');
             this.selectedFilePath = item.dataset.path;
             this.btnConfirm.disabled = false;
             this.delFile.disabled = false;
          });
-      } 
+      }
 
    }
-   
+
    /**
     * Hiển thị Modal gán tài liệu với danh sách đơn hàng và quản lý file
     * @param {Object} documentData - Dữ liệu đơn hàng mục tiêu
@@ -98,8 +98,9 @@ export default class DocumentViewer extends Viewer {
     * @param {Object} callbacks - Các hàm xử lý sự kiện (onConfirm, onLoadMore, onAutoUpload)
     * @returns {Modal} Trả về đối tượng Modal
     */
-   showUploadModal(documentData, listOrders, callbacks) {
+   showUploadModal(documentData, listOrders, callbacks, options = {}) {
       const { onConfirm, onLoadMore, onAutoUpload, deleteFile } = callbacks;
+      const { singleOrder = false } = options;
 
       this.dragDrop.resetDragDrop(); // Đặt lại trạng thái của DragDrop trước khi hiển thị modal
       this.uploadFiles.resetDragDrop(); // Đặt lại trạng thái upload file
@@ -111,21 +112,22 @@ export default class DocumentViewer extends Viewer {
 
       }
 
-      // 1. Tự động đưa đơn hàng hiện tại (được click) vào khung drop-zone
-      const currentOrderNode = TagBuilder.create('li')
-         .setAttributes({ className: 'drag__item', draggable: "true" })
-         .html(`#${documentData.ID}`)
-         .build();
-      
-      this.dragDrop.setDragItems([currentOrderNode]);
-      this.dragDrop.data.dropList.append(currentOrderNode);
-      this.dragDrop.data.result.push(parseInt(documentData.ID));
+      if (!singleOrder) {
+         // Chỉ hiển thị vùng chọn order khi đang gán hàng loạt từ order list.
+         const currentOrderNode = TagBuilder.create('li')
+            .setAttributes({ className: 'drag__item', draggable: "true" })
+            .html(`#${documentData.ID}`)
+            .build();
 
-      // 2. Hiển thị các đơn hàng gợi ý khác (chưa có tài liệu) vào khung drag-zone
-      let dragItems = this._dragListOrders(listOrders);
-      this.dragDrop.setDragItems(dragItems); // Cập nhật các phần tử có thể kéo thả vào DragDrop      
-      this.dragDrop.data.dragZone.append(...dragItems); // Thêm các phần tử mới vào vùng thả
-      
+         this.dragDrop.setDragItems([currentOrderNode]);
+         this.dragDrop.data.dropList.append(currentOrderNode);
+         this.dragDrop.data.result.push(parseInt(documentData.ID));
+
+         const dragItems = this._dragListOrders(listOrders);
+         this.dragDrop.setDragItems(dragItems);
+         this.dragDrop.data.dragZone.append(...dragItems);
+      }
+
       // Cấu hình tự động upload khi thả file vào vùng UploadFiles
       this.uploadFiles.processIncomingFiles = async (fileList) => {
          const file = fileList[0];
@@ -133,7 +135,9 @@ export default class DocumentViewer extends Viewer {
       };
 
       this.btnConfirm.onclick = () => {
-         const selectedOrders = this._getAcceptedOrderIds();
+         const selectedOrders = singleOrder
+            ? [parseInt(documentData.ID)]
+            : this._getAcceptedOrderIds();
          if (selectedOrders.length === 0) return this.showNotice('Vui lòng kéo đơn hàng vào vùng nhận.', 'warning');
          onConfirm(selectedOrders);
       };
@@ -144,19 +148,21 @@ export default class DocumentViewer extends Viewer {
       this.delFile.onclick = () => {
          const selectedFile = this.uploadFiles.data.dropList.querySelector('.file-grid-item.selected');
          if (! selectedFile ) return;
-         let pathFile = selectedFile.dataset.path; 
+         let pathFile = selectedFile.dataset.path;
          const fileName = selectedFile.querySelector('.file-name').innerText;
-         
+
          deleteFile(pathFile, fileName,  selectedFile)
          // selectedFile.remove()
       }
 
-      return this.modal        
+      const content = singleOrder ? this.uploadFiles.data.main : this.form;
+
+      return this.modal
          .title(`Upload tài liệu cho đơn hàng #${documentData.ID}`)
          .width('90%')
          .maxWidth('820px') // Thu nhỏ lại một chút so với Preview (870px)
          .footer(true)
-         .content([this.form])         
+         .content([content])
          .footerContent([this.delFile, this.btnConfirm])
          .open()
    }
@@ -168,7 +174,27 @@ export default class DocumentViewer extends Viewer {
       const grid = this.uploadFiles.data.dropList;
       if (!append) grid.innerHTML = '';
 
-      const fileNodes = files.map(file => this._createFileNode(file, grid));
+      const pdfFiles = files.filter(file => {
+         const fileName = typeof file?.name === 'string' ? file.name : '';
+         const extension = typeof file?.ext === 'string' && file.ext
+            ? file.ext
+            : fileName.split('.').pop();
+         return extension.toLowerCase() === 'pdf';
+      }).sort((fileA, fileB) => {
+         const timestampA = Number(fileA?.timestamp || 0);
+         const timestampB = Number(fileB?.timestamp || 0);
+
+         if (timestampA !== timestampB) {
+            return timestampB - timestampA;
+         }
+
+         return String(fileB?.relative_path || '').localeCompare(
+            String(fileA?.relative_path || ''),
+            undefined,
+            { numeric: true, sensitivity: 'base' }
+         );
+      });
+      const fileNodes = pdfFiles.map(file => this._createFileNode(file, grid));
       grid.append(...fileNodes);
    }
 
@@ -179,11 +205,11 @@ export default class DocumentViewer extends Viewer {
    prependFile(file) {
       const grid = this.uploadFiles.data.dropList;
       if (!grid) return;
-      
+
       const node = this._createFileNode(file, grid);
       grid.prepend(node);
    }
- 
+
    /**
     * Helper để tạo cấu trúc DOM cho một item file
     * @param {Object} file - Thông tin tệp
@@ -202,15 +228,15 @@ export default class DocumentViewer extends Viewer {
       else if (['jpg', 'jpeg', 'png', 'webp'].includes(ext)) icon = '🖼️';
 
       const item = TagBuilder.create('li')
-         .setAttributes({ 
-            className: 'file-grid-item', 
+         .setAttributes({
+            className: 'file-grid-item',
             'data-path': file.relative_path,
-            title: `${file.name} (${file.size || ''})` 
+            title: `${file.name} (${file.size || ''})`
          })
          .append([
             TagBuilder.create('div').setAttributes({ className: 'file-icon' }).html(icon).build(),
             TagBuilder.create('span').setAttributes({ className: 'file-name' }).html(file.name).build(),
-           
+
          ])
          .build();
 
@@ -219,7 +245,7 @@ export default class DocumentViewer extends Viewer {
 
    /**
     * Ẩn/Hiện liên kết "Tải thêm file" dựa trên trạng thái còn dữ liệu hay không
-    * @param {boolean} show 
+    * @param {boolean} show
     */
    toggleLoadMore(show) {
       this.btnLoadMore.style.display = show ? 'block' : 'none';
@@ -234,10 +260,10 @@ export default class DocumentViewer extends Viewer {
       const items = this.dragDrop.data.dropList.querySelectorAll('.drag__item');
       return [...items].map(item => parseInt(item.innerText.replace('#', '')));
    }
-   
+
    /**
     * Tạo danh sách các phần tử kéo thả cho đơn hàng
-    * @param {number[]} listOrders 
+    * @param {number[]} listOrders
     * @private
     */
    _dragListOrders(listOrders) {
@@ -248,7 +274,7 @@ export default class DocumentViewer extends Viewer {
             .setAttributes({ className: 'drag__item', draggable: "true" })
             .html(`#${order}`)
             .build()
-      );     
+      );
    }
 
    /**
@@ -261,24 +287,24 @@ export default class DocumentViewer extends Viewer {
          .append([
             TagBuilder.create('h3').setAttributes({ className: 'section-title' }).html('1. Đơn hàng').build(),
             TagBuilder.create('p')
-            .setAttributes({ 
+            .setAttributes({
                style: 'font-size: 12px; color: #666; margin-bottom: 10px; font-style: italic;',
                className: 'file-manager-instruction'
             })
             .html('Bạn có thể kéo thả đơn hàng vào đây để gán hàng loạt').build(),
             this.dragDrop.data.main,
          ]).build();
-      
+
       return TagBuilder.create('div')
-         .setAttributes({ className: 'document-upload-form unified-layout' , id: 'document-upload-form'})         
+         .setAttributes({ className: 'document-upload-form unified-layout' , id: 'document-upload-form'})
          .append([
             // Cột bên trái: Danh sách đơn hàng cần gán và Vùng nhận đơn
             orders,
             this.uploadFiles.data.main,
-            // Cột bên phải: Quản lý File (Vùng upload và Grid danh sách file)           
+            // Cột bên phải: Quản lý File (Vùng upload và Grid danh sách file)
          ]).build();
    }
-   showPreviewModal(documentData, link) { 
+   showPreviewModal(documentData, link, options = {}) {
       const titles = {
          vatDocument: 'Hóa đơn VAT',
          orderDocument: 'Tài liệu đối ứng',
@@ -286,20 +312,35 @@ export default class DocumentViewer extends Viewer {
       };
 
       const displayTitle = titles[documentData.name] || 'Tài liệu';
-    
+
       // Tạo container hiển thị PDF 100% chiều rộng và tự động có scrollbar bên trong
       const pdfContainer = TagBuilder.create('div')
-         .setAttributes({ 
-            style: 'width: 100%; height: 70vh; border: 1px solid #ddd; background: #fff;' 
+         .setAttributes({
+            style: 'width: 100%; height: 70vh; border: 1px solid #ddd; background: #fff;'
          })
          .build();
 
-      this.modal        
+      let removeButton = null;
+      if (typeof options.onRemove === 'function') {
+         removeButton = TagBuilder.create('button')
+            .setAttributes({ className: 'button button-secondary tsp-document-remove', type: 'button' })
+            .append([
+               TagBuilder.create('span').setAttributes({ className: 'dashicons dashicons-trash' }).build(),
+               document.createTextNode(' Gỡ tài liệu')
+            ])
+            .build();
+         removeButton.onclick = options.onRemove;
+      }
+
+      this.modal
          .title(`${displayTitle} - Đơn hàng #${documentData.ID}`)
          .width('95%') // Mở rộng chiều rộng modal để PDF hiển thị lớn nhất có thể
          .maxWidth('870px')
-         .footer(false) // Ẩn footer khi xem trước tài liệu
-         .content([pdfContainer])         
+         .footer(Boolean(removeButton))
+         .content([pdfContainer]);
+
+      if (removeButton) this.modal.footerContent([removeButton]);
+      this.modal
          .open();
 
       // Kiểm tra hỗ trợ nhúng PDF
@@ -352,10 +393,10 @@ export default class DocumentViewer extends Viewer {
             // 3. Thêm nút xóa (Trash icon) bằng TagBuilder để đồng bộ phong cách
             if (!orderEl.querySelector('.delete__button')) {
                const deleteBtn = TagBuilder.create('a')
-                  .setAttributes({ 
-                     href: '#', 
-                     className: 'delete__button', 
-                     'data-action': 'deleteDocument' 
+                  .setAttributes({
+                     href: '#',
+                     className: 'delete__button',
+                     'data-action': 'deleteDocument'
                   })
                   .html('<span class="dashicons dashicons-trash"></span>')
                   .build();
@@ -394,5 +435,10 @@ export default class DocumentViewer extends Viewer {
             if (deleteBtn) deleteBtn.remove();
          }
       });
+   }
+
+   renderDocumentSingle() {
+
+      // return this.tabs.render();
    }
 }

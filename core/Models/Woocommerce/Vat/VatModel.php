@@ -1,6 +1,8 @@
 <?php 
 namespace App\Models\Woocommerce\Vat;
 
+use App\Support\PluginRequest;
+
 class VatModel {
    public static function init() {
       // add_filter('woocommerce_rest_prepare_customer_object', [self::class,'prepareCustomerObject'], 999, 3);
@@ -8,6 +10,10 @@ class VatModel {
    }
 
    public static function prepareVatObject($response, $customer, $request) {
+      if (!PluginRequest::is($request)) {
+         return $response;
+      }
+
       if (strpos($request->get_route(), '/wc/v3/taxes') !== false) { 
          $data = $response->get_data();
          $vat = self::extractVat($data); 
@@ -24,4 +30,3 @@ class VatModel {
 
    }
 }
-

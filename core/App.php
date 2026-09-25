@@ -10,6 +10,8 @@ use App\Controllers\LoadScriptController;
 use App\Controllers\Menus\RegMenuController;
 use App\Controllers\Woocommerce\MasterSupporterController;
 use App\Controllers\Documents\DocumentController;
+use App\Support\SystemFolderManager;
+use App\Support\PrintDatabase;
 use App\Api\LoadingApi;
 
 class App {
@@ -61,6 +63,9 @@ class App {
       $this->plugin_manager->require('WooCommerce', 'woocommerce/woocommerce.php');
       
       if ($this->plugin_manager->validate()) {
+         PrintDatabase::ensureTables();
+         SystemFolderManager::ensureConfigured();
+
          $this->menu_registry->registerMultiple([
             'App\Controllers\Menus\RegMasterMenuController',
             'App\Controllers\Menus\RegMenuQuotationController',

@@ -1,91 +1,92 @@
-// Variables cho kích thước đồng nhất
+// components/_quotation.scss
+// Không cần @use 'abstracts/color' — chỉ cần đã @use nó ở style.scss gốc.
+
+// Variables cho kích thước đồng nhất (không phải màu — giữ SCSS variable)
 $control-size: 18px; // Kích thước chuẩn cho cả checkbox và button
-$delete-color: #ff4d4f;
 
 .header_ {
-   max-width: 100%;
-   display: flex;
-   align-items: center;
-   border-bottom: 2px solid #ccc;
-   .logo {
-      max-width: 25%;
-      img {
-         max-width: 100%;
-      }
-   }
-   .mycompany {
-      margin-left: auto;
-      text-align: right;
-      position: relative;
-      img {
-         position: absolute;
-         width: 40mm;
-         height: auto;
-         right: 10mm;
-         top: 10mm
-      }
-   }
+	max-width: 100%;
+	display: flex;
+	align-items: center;
+	border-bottom: 2px solid var(--color-border);
+	.logo {
+		max-width: 25%;
+		img {
+			max-width: 100%;
+		}
+	}
+	.mycompany {
+		margin-left: auto;
+		text-align: right;
+		position: relative;
+		img {
+			position: absolute;
+			width: 40mm;
+			height: auto;
+			right: 10mm;
+			top: 10mm;
+		}
+	}
 }
+
 .customer {
-   h2 {
-      font-size: 20pt;
-      text-align: center;
-   }
-   &__wrapper {
-      display: flex;
-      flex-direction: column;
-      .line {
-         display: flex;
-         flex-direction: row;
-         &__label {
-            min-width: 15%;
-         }
-      }
-   }
+	h2 {
+		font-size: 20pt;
+		text-align: center;
+	}
+	&__wrapper {
+		display: flex;
+		flex-direction: column;
+		.line {
+			display: flex;
+			flex-direction: row;
+			&__label {
+				min-width: 15%;
+			}
+		}
+	}
 }
 
 .hello__mes {
-   font-style: italic;
+	font-style: italic;
 }
 
+// ===== Bảng báo giá / hoá đơn =====
+// Border dùng biến riêng (--color-table-border), không dùng --color-border thông thường
+// vì bảng in ấn cần độ tương phản mạnh hơn khung UI thông thường.
 .page {
-   .table {
-      border-collapse: collapse;
-      width: 100%;
-      border: 1px solid black;
-      td,th {
-         padding: 6px;
-         vertical-align: top;
-         border: 1px solid black;
-         
-      }
-      &__header {
-         font-size: 10pt;
-      }
-   }
-   .note {
-      width: 28.5%;
-      text-align: left;
+	.table {
+		border-collapse: collapse;
+		width: 100%;
+		border: 1px solid var(--color-table-border);
+		td, th {
+			padding: 6px;
+			vertical-align: top;
+			border: 1px solid var(--color-table-border);
+		}
+		&__header {
+			font-size: 10pt;
+		}
+	}
+	.note {
+		width: 28.5%;
+		text-align: left;
 	}
 	.index {
 		width: 6%;
 	}
-
 	.specs {
 		width: 50%;
 	}
-
 	.quantity {
 		width: 11.5%;
 		text-align: right;
 	}
-
 	.price {
 		width: 11.5%;
 		text-align: right;
 	}
-
-	.total { 
+	.total {
 		width: 15%;
 		text-align: right;
 	}
@@ -93,11 +94,9 @@ $delete-color: #ff4d4f;
 		width: 6%;
 		text-align: left;
 	}
-
 	.vattitle {
 		width: 80%;
 	}
-
 	.stotal {
 		width: 16%;
 		text-align: right;
@@ -107,149 +106,175 @@ $delete-color: #ff4d4f;
 		// width: 4%;
 	}
 }
+
+// Vùng cho phép sửa trực tiếp — viền ẩn dạng "vô hình" (trùng màu nền)
 *[contenteditable] {
-   cursor: text;
+	cursor: text;
 	outline: none;
-	border-bottom: 1px solid white;
-   &:focus {
-      border-bottom: 1px solid #ccc;
-   }
+	border-bottom: 1px solid transparent;
+	&:focus {
+		border-bottom: 1px solid var(--color-border);
+	}
 }
 
 .more_info {
-   h4 {
-      margin: 0;
-     
-   }
-   &-content {
-      margin-bottom: 13pt;
-   }
+	h4 {
+		margin: 0;
+	}
+	&-content {
+		margin-bottom: 13pt;
+	}
 }
+
 .quotation {
-   &-title {
-      text-align: center;
-      font-size: 20pt;
-   }
+	&-title {
+		text-align: center;
+		font-size: 20pt;
+	}
 }
+
 p.quotation-info {
-   text-indent: 5mm;
+	text-indent: 5mm;
 }
+
 .quotation-info.hello__mes {
-   margin: 6px 0;
+	margin: 6px 0;
 }
+
 .signater {
-   display: flex;
-   align-items: top;
-   .saler {
-      width: 50%;
-      img {
-         width: 100%;
-      }
-   }
+	display: flex;
+	align-items: top;
+	.saler {
+		width: 50%;
+		img {
+			width: 100%;
+		}
+	}
 }
+
 .customer-approve {
-   width: 50%;
-   text-align: center;
+	width: 50%;
+	text-align: center;
 }
 
 .spec__group {
-   display: block; // Ép mỗi nhóm quy cách nằm trên 1 dòng
-   margin-bottom: 2px;
-   line-height: 1.4;
-  
+	display: block; // Ép mỗi nhóm quy cách nằm trên 1 dòng
+	margin-bottom: 2px;
+	line-height: 1.4;
 }
 
 .semi-bold {
-   font-weight: 600;
+	font-weight: 600;
 }
- 
 
 .print-only {
-   display: none; /* Mặc định giấu trên màn hình */
+	display: none; /* Mặc định giấu trên màn hình */
 }
+
 .stt-render {
-   display: none; // Giấu trên màn hình
-   font-weight: 600;
-} 
+	display: none; // Giấu trên màn hình
+	font-weight: 600;
+}
+
+// ===== Nút bấm & control tương tác =====
 .btn-delete-single {
-   position: relative;
-   width: 18px;
-   height: 18px;
-   text-align: center;
+	position: relative;
+	width: $control-size;
+	height: $control-size;
+	text-align: center;
+	background-color: var(--color-success);
+	border: none;
+	color: var(--color-text-inverse);
+	border-radius: 4px;
+
+	&:hover {
+		background-color: var(--color-success-hover);
+	}
 }
-input[type=checkbox] {
-   &.check-item, 
-   &.check-all {
-      width: 18px;
-      height: 18px;
-      margin-right: 0;
-   }
+
+input[type="checkbox"] {
+	&.check-item,
+	&.check-all {
+		width: $control-size;
+		height: $control-size;
+		margin-right: 0;
+	}
 }
+
 .x-x {
-   display: inline;
-   position: absolute;
-   top: 0px;
-   left: 4px;
-   cursor: pointer;
-   
+	display: inline;
+	position: absolute;
+	top: 0px;
+	left: 4px;
+	cursor: pointer;
 }
+
 .table {
-   &.products {
-      position: relative;
-      counter-reset: rowNumber;
-      tbody {
-         tr {
-            counter-increment: rowNumber;
-         }
-      }
-   }
+	&.products {
+		position: relative;
+		counter-reset: rowNumber;
+		tbody {
+			tr {
+				counter-increment: rowNumber;
+			}
+		}
+	}
 }
+
 /* Hiển thị số thứ tự vào thẻ có class stt-render */
 .stt-render::before {
-    content: counter(rowNumber);
+	content: counter(rowNumber);
 }
 
 .eye-toggle-btn {
-   cursor: pointer;
-   color: #00a32a;
-   &:hover {
-      color:#028925;
-   }
+	cursor: pointer;
+	color: var(--color-success);
+	&:hover {
+		color: var(--color-success-hover);
+	}
 }
-.btn-delete-single {
-   position: relative;
-   background-color: #00a32a;
-   border: none;
-   color: white;
-   border-radius: 4px;
-   &:hover {
-      background-color:#028925;
-   }
-}
+
 .eye-open {
-   color: gray;
-   &::before {
-      content: "\f177";
-   }
-   &:hover{
-      color: #5c5c5c;
-      opacity: 1;
-   }
+	color: var(--color-text-secondary);
+	&::before {
+		content: "\f177";
+	}
+	&:hover {
+		color: var(--color-text);
+		opacity: 1;
+	}
 }
-.opacity-50{
-   opacity: 0.5;
+
+.opacity-50 {
+	opacity: 0.5;
 }
 
 .vatinvoice-table {
-   border: none !important;
-   thead {
-      tr, td {
-         padding: 6px;
-         border: none !important;
-      }
-   }
-   .x-x {
-      top: -3px;
-      left: 4px;
-   }
+	border: none !important;
+	thead {
+		tr, td {
+			padding: 6px;
+			border: none !important;
+		}
+	}
+	.x-x {
+		top: -3px;
+		left: 4px;
+	}
+}
+
+// ===== In ấn =====
+// Khi in, ép toàn bộ border bảng về đen tuyệt đối — giấy in không phụ thuộc theme UI.
+@media print {
+	.page .table,
+	.page .table td,
+	.page .table th {
+		border-color: #000000 !important;
+	}
+	.print-only {
+		display: block;
+	}
+	.stt-render {
+		display: table-cell;
+	}
 }

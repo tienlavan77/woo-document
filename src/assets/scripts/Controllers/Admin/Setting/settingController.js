@@ -1,6 +1,7 @@
 import Controller from '../../controller';
 import SettingViewer from '../../../Views/Admin/Setting/settingViewer';
 import CompanyController from './Components/companyController';
+import SystemController from './Components/systemController';
 import UserController from './Components/userController';
 
 /**
@@ -15,11 +16,14 @@ class SettingController extends Controller{
       // Lưu trữ dependency
      super()
 
-      // Khởi tạo các thành phần giao diện và controller con
-      this.companyController = new CompanyController();
-      this.userController = new UserController();    
-          
-      this.viewer = new SettingViewer();   
+      this.viewer = new SettingViewer();
+      this.userController = new UserController();
+
+      // Company/System chứa cấu hình nhạy cảm, chỉ khởi tạo ở phía admin.
+      if (this.viewer.isAdmin) {
+         this.companyController = new CompanyController();
+         this.systemController = new SystemController();
+      }
       
       // Tự động kích hoạt quá trình khởi tạo
       this.init(); 
@@ -31,10 +35,13 @@ class SettingController extends Controller{
    init() {
       
        // 1. Khởi tạo giao diện chính
-        this.viewer.body.children =[
-            this.companyController.viewer.main,
-            this.userController.viewer.main
-        ]
+        this.viewer.body.children = [
+            ...(this.viewer.isAdmin ? [
+               this.companyController.viewer.main,
+               this.systemController.viewer.main,
+            ] : []),
+            this.userController.viewer.main,
+        ];
       
        // 2. Khởi tạo Controller cho Công ty   
         this.viewer.init();

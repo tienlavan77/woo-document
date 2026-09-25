@@ -26,7 +26,7 @@ export default class WooCommerceController {
    get routeMap() {      
       return {
          'editOrder': 'Orders/orderController',
-         'postOrder': 'productInPostController',
+         'postOrder': 'Orders/postOrderController',
          'editProduct': 'Products/editProductController',
          'postProduct': 'Products/postProductController', // load controller thêm sản phẩm trong trang chỉnh sửa sản phẩm
          'usersUser': 'Customers/customersController',

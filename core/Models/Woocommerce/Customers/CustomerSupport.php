@@ -19,7 +19,8 @@ class CustomerSupport {
          'billing_email'      => 'email',
          'billing_fax'        => 'fax',
          'billing_taxcode'    => 'taxcode',
-         'billing_sex'        => 'sex'
+         'billing_sex'        => 'sex',
+         'billing_industry'   => 'industry'
       ];
 
       $result = ['id' => $id];

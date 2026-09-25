@@ -13,7 +13,7 @@ class RegSettingMenuController extends MenuItemController {
    public $menuTitle = 'Setting';
    public $parentSlug = 'quotation';   
    public $iconUrl = 'dashicons-portfolio';
-   public $capability = 'manage_woocommerce';
+   public $capability = 'manage_options';
    public $subMenu = true;
    public $menuSlug = 'setting';
 
@@ -32,6 +32,5 @@ class RegSettingMenuController extends MenuItemController {
    }
 
 }
-
 
 

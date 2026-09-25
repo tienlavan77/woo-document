@@ -1,22 +1,24 @@
-$wp-off: #888;
-$wp-green: #00a32a;
-$wp-white: #ffffff;
-$wp_border: #ddd;
-$wp_bkhover: #028925;
+// components/_document-panel.scss
+// Không cần @use 'abstracts/color' — chỉ cần đã @use nó ở style.scss gốc.
+
+// Biến không phải màu — giữ SCSS variable
 $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
 .document_panel {
 	width: 360px;
 	height: auto;
-	background-color: $wp-white;
+	background-color: var(--color-surface);
+	color: var(--color-text);
 	position: fixed;
 	right: 30px;
 	bottom: 30px;
 	border-radius: 3px;
-	border: 1px solid $wp_border;
-	box-shadow: 2px 2px 5px #ccc;
+	border: 1px solid var(--color-border);
+	box-shadow: 2px 2px 5px var(--shadow-color);
 	font-size: 13px;
 	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+
 	.__item {
 		display: flex;
 		flex-direction: row;
@@ -24,41 +26,48 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 		gap: 5px;
 		flex-grow: 1;
 		padding: 15px;
-		border-bottom: 1px solid $wp_border;
+		border-bottom: 1px solid var(--color-border);
+
 		&:last-child {
 			border-bottom: none;
 		}
+
 		&.__actions {
 			flex-wrap: wrap;
 			button {
-				flex: 0 0 49%; /* Không giãn, không co, độ rộng luôn là 1/3 */
-  				box-sizing: border-box; /* Đảm bảo padding/border không làm tràn hàng */
+				flex: 0 0 49%; /* Không giãn, không co */
+				box-sizing: border-box; /* Đảm bảo padding/border không làm tràn hàng */
 			}
 		}
 	}
+
 	.__label {
 		margin: 0;
 		text-align: left;
+		color: var(--color-text);
 	}
+
 	.wp-toggle-clean {
 		margin-left: auto;
 	}
+
 	.panel-btn {
 		cursor: pointer;
 		border-radius: 4px;
 		font-size: 12px;
 		border: none;
 		padding: 4px;
-		background-color: $wp-green;
-		color: white;
+		background-color: var(--color-success);
+		color: var(--color-text-inverse);
+		transition: background-color 0.2s;
+
 		&:hover {
-			background-color:$wp_bkhover;
+			background-color: var(--color-success-hover);
 		}
 	}
-	
 }
-// Định nghĩa màu sắc chuẩn WordPress
 
+// Toggle switch — dùng lại bộ màu success/toggle-off ở trên
 .wp-toggle-clean {
 	display: inline-block;
 	cursor: pointer;
@@ -68,17 +77,17 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
 		// Trạng thái khi BẬT (Checked)
 		&:checked + .switch {
-				background-color: $wp-green;
+			background-color: var(--color-success);
 
-				&:before {
-					content: "ON";              
-					left: 4px;
-				}
+			&:before {
+				content: "ON";
+				left: 4px;
+			}
 
-				&:after {
-					left: 30px; // Đẩy nút tròn sang phải
-					box-shadow: -2px 2px 5px rgba(0, 0, 0, 0.2);
-				}
+			&:after {
+				left: 30px; // Đẩy nút tròn sang phải
+				box-shadow: -2px 2px 5px rgba(0, 0, 0, 0.2);
+			}
 		}
 	}
 
@@ -87,39 +96,37 @@ $transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 		display: block;
 		width: 52px;
 		height: 24px;
-		background-color: $wp-off;
+		background-color: var(--color-toggle-off);
 		border-radius: 12px;
 		transition: all 0.3s ease;
-		border: 2px solid #fff;
-		//   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+		border: 2px solid var(--color-knob-border);
 
 		// HIỂN THỊ CHỮ (ON/OFF)
 		&:before {
-				content: "OFF";
-				position: absolute;
-				top: 50%;
-				right: 4px;
-				transform: translateY(-50%);
-				color: $wp-white;
-				font-family: sans-serif;
-				font-weight: bold;
-				font-size: 8pt;
-				transition: all 0.3s ease;
+			content: "OFF";
+			position: absolute;
+			top: 50%;
+			right: 4px;
+			transform: translateY(-50%);
+			color: var(--color-text-inverse);
+			font-family: sans-serif;
+			font-weight: bold;
+			font-size: 8pt;
+			transition: all 0.3s ease;
 		}
 
 		// HIỂN THỊ NÚT TRÒN (KNOB)
 		&:after {
-				content: "";
-				position: absolute;
-				top: 2px;
-				left: 2px;
-				width: 16px;
-				height: 16px;
-				background: linear-gradient(180deg, #fff 0%, #f0f0f1 100%);
-				border-radius: 50%;
-				transition: all 0.3s ease;
-				box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+			content: "";
+			position: absolute;
+			top: 2px;
+			left: 2px;
+			width: 16px;
+			height: 16px;
+			background: var(--color-knob);
+			border-radius: 50%;
+			transition: all 0.3s ease;
+			box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
 		}
 	}
 }
-

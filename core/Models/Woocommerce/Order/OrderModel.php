@@ -2,6 +2,7 @@
 namespace App\Models\Woocommerce\Order;
 
 use App\Models\Woocommerce\Customers\CustomerSupport;
+use App\Support\PluginRequest;
 class OrderModel {  
    // Đổi tên hàm từ 'repareOrders' thành 'prepareOrders'
    public static function prepareOrders() {
@@ -9,6 +10,10 @@ class OrderModel {
    }
 
    public static function prepareOrdersObject($response, $order, $request) { 
+      if (!PluginRequest::is($request)) {
+         return $response;
+      }
+
       if (strpos($request->get_route(), '/wc/v3/orders') !== false) {
          $data = $response->get_data();
          if (empty($data)) return $response;

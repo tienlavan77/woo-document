@@ -19,7 +19,6 @@ define('REQUIRED_PLUGIN_NAME', 'WooCommerce');
 define('PLUGIN_DIR_DOCUMENT', plugin_dir_path(__FILE__));
 define('PLUGIN_URL_DOCUMENT', plugin_dir_url(__FILE__));
 define('TEMPLATES_DIR_DOCUMENT', PLUGIN_DIR_DOCUMENT . '/templates' );
-define('SECRET_KEY_DOCUMENT', '2hm3ePeIQ8u3aQQp9DYTXNt7uiWW4QcA');
 define('NAME_SPACE_DOCUMENT', 'tinsinhphat/v1');
 define('ACCESS_KEY','access_jwt_token');
 define('REFRESH_KEY','refresh_jwt_token');

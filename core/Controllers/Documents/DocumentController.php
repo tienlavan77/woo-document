@@ -119,10 +119,11 @@ class DocumentController extends Controller { // Kế thừa từ Controller
             $this->model->clearFileCache();
 
             $upload_dir = wp_upload_dir();
+            $relative_path = $this->model->getNewRelativePrefix() . $file_name;
             return $this->sendSuccess([
                 'name'          => $file_name,
-                'relative_path' => 'order_documents/' . $file_name,
-                'url'           => $upload_dir['baseurl'] . '/order_documents/' . $file_name,
+                'relative_path' => $relative_path,
+                'url'           => $upload_dir['baseurl'] . '/' . $relative_path,
                 'ext'           => $ext,
                 'size'          => size_format($file['size'])
             ], 'Tải lên kho thành công!');
@@ -199,16 +200,44 @@ class DocumentController extends Controller { // Kế thừa từ Controller
    }
 
    /**
+    * Return the three document assignments for an order edit screen.
+    */
+   public function handleGetOrderDocuments(WP_REST_Request $request) {
+      if (!current_user_can('edit_shop_orders')) {
+         return $this->sendError('rest_forbidden', 'Bạn không có quyền xem tài liệu của đơn hàng.', 403);
+      }
+
+      $order_id = absint($request->get_param('order_id'));
+      if (!$order_id || !wc_get_order($order_id)) {
+         return $this->sendError('order_not_found', 'Không tìm thấy đơn hàng.', 404);
+      }
+
+      $stored = OrderModel::getOrderMeta($order_id, 'orders', true);
+      $stored = is_array($stored) ? $stored : [];
+      $legacy_map = ['invoice' => 'vatdoc', 'quotation' => 'cus_orders', 'delivery' => 'delivery_doc'];
+      $document_map = [
+         'invoice' => ['name' => 'vatDocument', 'title' => 'Hóa đơn'],
+         'quotation' => ['name' => 'orderDocument', 'title' => 'Đơn hàng'],
+         'delivery' => ['name' => 'deliveryDocument', 'title' => 'Phiếu giao hàng'],
+      ];
+
+      foreach ($document_map as $type => &$document) {
+         $document['file'] = $stored[$document['name']] ?? $stored[$legacy_map[$type]] ?? '';
+         $document['file'] = is_string($document['file']) ? $document['file'] : '';
+      }
+      unset($document);
+
+      return $this->sendSuccess([
+         'order_id'  => $order_id,
+         'documents' => $document_map,
+      ], 'Lấy tài liệu của đơn hàng thành công.');
+   }
+
+   /**
     * API Proxy: Xác thực và stream nội dung file PDF
     */
    public function handleStreamFile(WP_REST_Request $request) {
-      // 1. Xác thực thủ công vì trình xem PDF không gửi Header
-      $token = $request->get_param('token');
-      if (!$token || !JwtAuthenticate::validateToken($token)) { // Giả định bạn có hàm validateToken
-         return new WP_Error('rest_forbidden', 'Phiên làm việc hết hạn hoặc không hợp lệ.', ['status' => 403]);
-      }
-
-      // 2. Kiểm tra quyền hạn
+      // JWT middleware đã xác thực request trước khi callback được gọi.
       if (!current_user_can('edit_shop_orders')) {
          return $this->sendError('rest_forbidden', 'Bạn không có quyền xem tài liệu này.', 403);
       }
@@ -220,10 +249,21 @@ class DocumentController extends Controller { // Kế thừa từ Controller
 
       $file_path = wp_upload_dir()['basedir'] . '/' . $result['relative_path'];
 
-      // 3. Thiết lập Header và Stream file
+      clearstatcache(true, $file_path);
+      $etag = '"' . md5($file_path . '|' . filemtime($file_path) . '|' . filesize($file_path)) . '"';
+      header('Cache-Control: private, max-age=86400');
+      header('ETag: ' . $etag);
+      header('Last-Modified: ' . gmdate('D, d M Y H:i:s', filemtime($file_path)) . ' GMT');
+
+      if (trim((string) ($_SERVER['HTTP_IF_NONE_MATCH'] ?? '')) === $etag) {
+         status_header(304);
+         exit;
+      }
+
+      // Trả PDF trực tiếp qua REST proxy thay vì mở URL uploads public.
       header('Content-Type: application/pdf');
       header('Content-Disposition: inline; filename="' . basename($file_path) . '"');
-      header('Cache-Control: private, max-age=86400');
+      header('Content-Length: ' . filesize($file_path));
       readfile($file_path);
       exit;
    }

@@ -70,6 +70,35 @@ class DocumentApi extends Api {
             ]
          ]
       );
+      register_rest_route(
+         self::$namespace,
+         '/documents/stream/(?P<slug>[^/]+)',
+         [
+            [
+               'methods'             => \WP_REST_Server::READABLE,
+               'callback'            => [$this->controller, 'handleStreamFile'],
+               'args'                => [
+                  'slug' => [
+                     'description' => 'Tên định danh của file PDF, không bao gồm phần mở rộng .pdf.',
+                     'type'        => 'string',
+                     'required'    => true,
+                  ],
+               ],
+               'permission_callback' => [JwtAuthenticate::class, 'JwtAuthenticate']
+            ]
+         ]
+      );
+      register_rest_route(
+         self::$namespace,
+         '/documents/orders/(?P<order_id>\d+)',
+         [
+            [
+               'methods'             => \WP_REST_Server::READABLE,
+               'callback'            => [$this->controller, 'handleGetOrderDocuments'],
+               'permission_callback' => [JwtAuthenticate::class, 'JwtAuthenticate']
+            ]
+         ]
+      );
     
       register_rest_route( 
          self::$namespace, 
@@ -140,4 +169,3 @@ class DocumentApi extends Api {
       ], 200);
    }
 }
- 

@@ -1,6 +1,8 @@
 <?php
 namespace App\Models\Woocommerce\Product;
 
+use App\Support\PluginRequest;
+
 class ProductModel {
 
    public static function init() {
@@ -11,6 +13,10 @@ class ProductModel {
      * Hàm xử lý chính: Lọc dữ liệu trước khi trả về cho Client
      */
    public static function prepareProductObject($response, $product, $request) { 
+      if (!PluginRequest::is($request)) {
+         return $response;
+      }
+
       $data = $response->get_data();
     
       // 1. Whitelist các trường cần thiết cho sản phẩm cha
@@ -150,4 +156,4 @@ class ProductModel {
       return get_post_meta($productId, $key, true);
    }
   
-} 
+}

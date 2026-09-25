@@ -1,0 +1,158 @@
+// components/_button.scss
+// Hệ thống button chuẩn — dùng chung cho toàn bộ project.
+// Không cần @use 'abstracts/color' — chỉ cần đã @use nó ở style.scss gốc.
+
+// ===== Kích thước (không phải màu — giữ SCSS variable) =====
+$btn-radius: 6px;
+$btn-height-sm: 28px;
+$btn-height-md: 36px;
+$btn-height-lg: 44px;
+$btn-transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+
+// ===== Mixin dùng nội bộ để tạo variant =====
+@mixin btn-variant($bg, $bg-hover, $text, $border: transparent) {
+	background-color: $bg;
+	color: $text;
+	border: 1px solid $border;
+
+	&:hover:not(:disabled) {
+		background-color: $bg-hover;
+	}
+
+	&:active:not(:disabled) {
+		filter: brightness(0.95);
+	}
+}
+
+// ===== Base =====
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: $btn-height-md;
+	padding: 0 16px;
+	border-radius: $btn-radius;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1;
+	white-space: nowrap;
+	cursor: pointer;
+	transition: $btn-transition;
+	box-sizing: border-box;
+
+	&:disabled,
+	&.is-disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+		pointer-events: none;
+	}
+
+	&:focus-visible {
+		outline: 2px solid var(--color-info);
+		outline-offset: 2px;
+	}
+
+	// ----- Kích thước -----
+	&--sm {
+		height: $btn-height-sm;
+		padding: 0 12px;
+		font-size: 12px;
+	}
+
+	&--lg {
+		height: $btn-height-lg;
+		padding: 0 22px;
+		font-size: 14px;
+	}
+
+	&--block {
+		width: 100%;
+	}
+
+	&--icon {
+		width: $btn-height-md;
+		height: $btn-height-md;
+		padding: 0;
+
+		&.btn--sm { width: $btn-height-sm; height: $btn-height-sm; }
+		&.btn--lg { width: $btn-height-lg; height: $btn-height-lg; }
+	}
+
+	// ----- Variants màu -----
+	&--primary {
+		@include btn-variant(var(--color-primary), var(--color-primary-hover), var(--color-text-inverse));
+	}
+
+	&--secondary {
+		@include btn-variant(var(--color-secondary), var(--color-secondary-hover), var(--color-text-inverse));
+	}
+
+	&--success {
+		@include btn-variant(var(--color-success), var(--color-success-hover), var(--color-text-inverse));
+	}
+
+	&--danger {
+		@include btn-variant(var(--color-error), var(--color-error), var(--color-text-inverse));
+		&:hover:not(:disabled) { filter: brightness(0.9); }
+	}
+
+	&--outline {
+		background-color: transparent;
+		color: var(--color-text);
+		border: 1px solid var(--color-border-strong);
+
+		&:hover:not(:disabled) {
+			background-color: var(--color-surface);
+			border-color: var(--color-primary);
+		}
+	}
+
+	&--ghost {
+		background-color: transparent;
+		color: var(--color-text-secondary);
+		border: 1px solid transparent;
+
+		&:hover:not(:disabled) {
+			background-color: var(--color-surface);
+			color: var(--color-text);
+		}
+	}
+
+	// ----- Loading state -----
+	&.is-loading {
+		position: relative;
+		color: transparent !important;
+		pointer-events: none;
+
+		&::after {
+			content: "";
+			position: absolute;
+			width: 14px;
+			height: 14px;
+			border: 2px solid rgba(255, 255, 255, 0.4);
+			border-top-color: #fff;
+			border-radius: 50%;
+			animation: btn-spin 0.6s linear infinite;
+		}
+
+		// Loading trên nút outline/ghost — spinner cần màu tối thay vì trắng
+		&.btn--outline::after,
+		&.btn--ghost::after {
+			border: 2px solid var(--color-border-strong);
+			border-top-color: var(--color-text);
+		}
+	}
+}
+
+@keyframes btn-spin {
+	to { transform: rotate(360deg); }
+}
+
+// ===== Mixin tương thích ngược với wp-button cũ =====
+// Nếu code cũ còn @include utils.wp-button, có thể trỏ mixin này sang btn-variant
+// để không phải sửa lại toàn bộ chỗ gọi.
+@mixin wp-button {
+	@extend .btn;
+	@extend .btn--primary;
+}

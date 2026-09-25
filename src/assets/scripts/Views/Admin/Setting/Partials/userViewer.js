@@ -46,17 +46,6 @@ export default class UserViewer extends PartialViewer {
     
    }
 
-   _showNotice(message, style) {
-      if (this.notice) {
-         this.notice.open({           
-            message,
-            icon: true,
-            style,
-            timer: 1500,            
-         });
-      }
-   }
- 
    _viewImage (element) {  
       let link = element.link.value;
       this.modal.open({title : 'Image viewer signature'})
@@ -75,4 +64,3 @@ export default class UserViewer extends PartialViewer {
       
    }
 }
-

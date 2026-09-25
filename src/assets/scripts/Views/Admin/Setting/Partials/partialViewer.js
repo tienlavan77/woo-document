@@ -82,11 +82,11 @@ export default class PartialViewer extends Viewer {
       let link = this._createInput({...item.element});
       let choice =  this.formFactory.tagBuilder.create('button')
                      .html('Choice Image')
-                     .setAttributes({className:'btn __choice'})
+                     .setAttributes({type: 'button', className:'btn __choice'})
                      .build();
       let view =  this.formFactory.tagBuilder.create('button') 
                      .html('View Image')
-                     .setAttributes({className:'btn __view'})
+                     .setAttributes({type: 'button', className:'btn __view'})
                      .build();
                      
       let cover = this._createRow(item.label, [
@@ -170,4 +170,3 @@ export default class PartialViewer extends Viewer {
    }
    
 }
-

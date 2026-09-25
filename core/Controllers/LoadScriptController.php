@@ -42,19 +42,23 @@ class LoadScriptController {
         $is_dev = defined('WP_DEBUG') && WP_DEBUG;
         
         if ($is_dev) {
-            wp_enqueue_script('document-client', 'https://192.168.1.181:5173/@vite/client', [], null, true);
-            wp_enqueue_script('document-plugin', 'https://192.168.1.181:5173/src/main.js', [], null, true);
+            // WP_DEBUG dùng Vite dev server. Luôn đổi version để trình duyệt
+            // không giữ lại module cũ sau khi sửa source frontend.
+            $dev_version = (string) time();
+            wp_enqueue_script('document-client', 'https://192.168.1.181:5173/@vite/client', [], $dev_version, true);
+            wp_enqueue_script('document-plugin', 'https://192.168.1.181:5173/src/main.js', [], $dev_version, true);
         } else {
             $manifest_path = PLUGIN_DIR_DOCUMENT . 'dist/.vite/manifest.json';
             
             if (file_exists($manifest_path)) {
                 $manifest = json_decode(file_get_contents($manifest_path), true);
                 $js_file = $manifest['src/main.js']['file'] ?? '';
-                wp_enqueue_script('my-vite-plugin', PLUGIN_URL_DOCUMENT . 'dist/' . $js_file, [], null, true);
+                $asset_version = (string) filemtime($manifest_path);
+                wp_enqueue_script('my-vite-plugin', PLUGIN_URL_DOCUMENT . 'dist/' . $js_file, [], $asset_version, true);
                 
                 if (!empty($js_file) && isset($manifest['src/main.js']['css'])) {
                     foreach ($manifest['src/main.js']['css'] as $css_file) {
-                        wp_enqueue_style('my-vite-style', PLUGIN_URL_DOCUMENT . 'dist/' . $css_file);
+                        wp_enqueue_style('my-vite-style', PLUGIN_URL_DOCUMENT . 'dist/' . $css_file, [], $asset_version);
                     }
                 }
             }

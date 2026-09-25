@@ -1,13 +1,16 @@
+// components/_document-upload.scss
+// Không cần @use 'abstracts/color' — chỉ cần đã @use nó ở style.scss gốc.
+
 #document-upload-files {
 	.drop-zone {
-		padding:0;
+		padding: 0;
 	}
 	.drag__file {
 		display: none;
 	}
 	.drop-zone__wrapper {
 		position: inherit;
-		top:auto;
+		top: auto;
 		left: auto;
 		transform: none;
 		padding: 15px;
@@ -17,45 +20,162 @@
 	}
 	.drop-zone__items {
 		display: grid;
-		
 	}
-		
 }
+
 .document-upload-form {
 	.section-title {
 		margin-bottom: 5px;
+		color: var(--color-text);
 	}
 	.file-manager-instruction {
 		font-size: 12px;
-		color: #666;
+		color: var(--color-text-secondary);
 		font-style: italic;
 	}
 }
 
-.file-manager-header-info {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
+// Order detail document shortcuts are rendered below the Customer selector.
+.tsp-order-data-host {
+	.tsp-order-document-cards {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 18px;
+		width: 100%;
+		margin: 18px 0 16px;
+		padding-top: 14px;
+		border-top: 1px solid var(--color-border);
+		clear: both;
+	}
 
-    .file-manager-instruction {
-        font-size: 12px;
-        color: #666;
-        font-style: italic;
-        margin: 0;
-    }
+	.tsp-order-document-card {
+		width: 100%;
+		min-width: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 4px;
+	}
 
-    .load-more-link {
-        font-size: 11px;
-        text-decoration: none;
-        color: #0073aa;
-        font-weight: 500;
+	.tsp-order-document-trigger {
+		width: 100%;
+		aspect-ratio: 1 / 1;
+		height: auto;
+		padding: 8px 6px;
+		border: 0;
+		background: transparent;
+		color: var(--color-text);
+		cursor: pointer;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 4px;
+		border-radius: inherit;
+		background: var(--color-surface);
+		border: 1px solid var(--color-border);
+		box-shadow: 0 1px 2px var(--shadow-color);
+		transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 
-        &:hover {
-            text-decoration: underline;
-        }
-    }
+		&:hover,
+		&:focus-visible {
+			background: var(--color-info-soft);
+			border-color: var(--color-info);
+			box-shadow: 0 4px 12px var(--shadow-color);
+			transform: translateY(-1px);
+			outline: none;
+		}
+	}
+
+	.tsp-order-document-icon {
+		width: 40px;
+		height: 40px;
+		font-size: 38px;
+		line-height: 40px;
+		color: var(--color-error);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+
+		svg {
+			width: 40px;
+			height: 40px;
+			display: block;
+		}
+	}
+
+	.tsp-order-document-plus-box {
+		width: 34px;
+		height: 34px;
+		border: 1px dashed var(--color-info);
+		border-radius: 4px;
+		color: var(--color-info);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+
+		.dashicons {
+			font-size: 22px;
+			width: 22px;
+			height: 22px;
+			line-height: 22px;
+		}
+	}
+
+	.is-empty .tsp-order-document-icon {
+		color: var(--color-info);
+	}
+
+	.tsp-order-document-title {
+		font-size: 12px;
+		font-weight: 600;
+		line-height: 1.2;
+		text-align: left;
+		white-space: normal;
+	}
+
+	.tsp-order-document-file {
+		max-width: 100%;
+		font-size: 9px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
 }
+
+@media screen and (max-width: 782px) {
+	.tsp-order-data-host .tsp-order-document-cards {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		max-width: 100%;
+	}
+}
+
+.file-manager-header-info {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 10px;
+
+	.file-manager-instruction {
+		font-size: 12px;
+		color: var(--color-text-secondary);
+		font-style: italic;
+		margin: 0;
+	}
+
+	.load-more-link {
+		font-size: 11px;
+		text-decoration: none;
+		color: var(--color-info);
+		font-weight: 500;
+
+		&:hover {
+			text-decoration: underline;
+		}
+	}
+}
+
 .file-manager-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -64,7 +184,7 @@
 	list-style: none;
 	max-height: 400px;
 	overflow-y: auto;
-	
+
 	.file-grid-item {
 		position: relative;
 		display: flex;
@@ -75,27 +195,28 @@
 		border-radius: 8px;
 		cursor: pointer;
 		transition: all 0.2s ease-in-out;
-		background: #f9f9f9;
+		background: var(--color-surface);
 		text-align: center;
 
 		&:hover {
-			background: #f0f7ff;		
+			background: var(--color-info-soft);
+
 			.file-icon svg {
-					filter: drop-shadow(2px 4px 6px rgba(0, 0, 0, 0.15));
-					transform: translateY(-2px); // Thêm hiệu ứng nhấc nhẹ lên để tăng tính tương tác
+				filter: drop-shadow(2px 4px 6px var(--shadow-color));
+				transform: translateY(-2px); // Hiệu ứng nhấc nhẹ lên để tăng tính tương tác
 			}
 		}
 
 		&.selected {
-			background: #e7f2fa;
-			// border-color: #0073aa;
-			// box-shadow: 0 0 0 1px #0073aa, 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-			
+			background: var(--color-info-soft-strong);
+			// border-color: var(--color-info);
+			// box-shadow: 0 0 0 1px var(--color-info), 0 4px 6px -1px var(--shadow-color);
+
 			.file-icon {
 				svg {
-					// Ép toàn bộ các phần tử path trong SVG sang màu xanh khi được chọn
+					// Ép toàn bộ các phần tử path trong SVG sang màu accent khi được chọn
 					path, .pdf, .ai, .doc, .st0 {
-						fill: #0073aa !important;
+						fill: var(--color-info) !important;
 					}
 				}
 			}
@@ -109,12 +230,12 @@
 			align-items: center;
 			justify-content: center;
 			height: 60px;
-			width:48px;
+			width: 48px;
 		}
 
 		.file-name {
 			font-size: 12px;
-			color: #333;
+			color: var(--color-text);
 			word-break: break-all;
 			display: -webkit-box;
 			-webkit-line-clamp: 2; // Giới hạn tên file trong 2 dòng
@@ -122,6 +243,6 @@
 			overflow: hidden;
 			line-height: 1.4;
 			width: 100%;
-		}		
+		}
 	}
 }
