@@ -1,0 +1,147 @@
+// components/_notice.scss
+// Không cần @use 'abstracts/color' ở đây — chỉ cần đã @use nó ở style.scss gốc là đủ.
+// var(--color-...) là cú pháp CSS thuần, Sass không cần biết nguồn gốc biến.
+
+// Variables (không phải màu — giữ SCSS variable vì không đổi theo theme)
+$notice-width: 320px;
+$transition-speed: 0.4s;
+$radius: 6px;
+
+.noticer {
+	position: fixed;
+	top: 45px;
+	right: 20px;
+	// width: $notice-width;
+	background: var(--color-surface);
+	color: var(--color-text);
+	border-radius: $radius;
+	box-shadow: 0 4px 12px var(--shadow-color);
+	display: flex;
+	align-items: center;
+	padding: 0px;
+	z-index: 10000;
+
+	// Trạng thái ẩn mặc định (Trượt ra ngoài màn hình bên phải)
+	transform: translateX(120%);
+	transition: transform $transition-speed cubic-bezier(0.68, -0.55, 0.265, 1.55), opacity $transition-speed, background-color 0.3s, color 0.3s;
+	opacity: 0;
+	pointer-events: none;
+
+	.dashicons {
+		width: auto;
+		height: auto;
+		display: inline-block;
+		font-size: 28px;
+	}
+
+	&.open {
+		transform: translateX(0);
+		opacity: 1;
+		pointer-events: auto;
+	}
+
+	&.--dangerous {
+		border-left: 5px solid var(--color-error);
+		background: var(--color-error-soft);
+
+		.noticer__icon {
+			color: var(--color-error);
+			.dashicons::before {
+				content: "\f534";
+			}
+		}
+	}
+
+	&.--warning {
+		border-left: 5px solid var(--color-warning);
+		background: var(--color-warning-soft);
+
+		.noticer__icon {
+			color: var(--color-warning);
+			.dashicons::before {
+				content: "\f534";
+			}
+		}
+	}
+
+	&.--success {
+		border-left: 5px solid var(--color-success);
+		background: var(--color-success-soft);
+
+		.noticer__icon {
+			color: var(--color-success);
+			.dashicons::before {
+				content: "\f15e";
+			}
+		}
+	}
+
+	&.--info {
+		border-left: 5px solid var(--color-info);
+		background: var(--color-info-soft);
+
+		.noticer__icon {
+			color: var(--color-info);
+			.dashicons::before {
+				content: "\f348";
+			}
+		}
+	}
+
+	// Cấu trúc bên trong
+	&__icon {
+		flex-shrink: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 15px;
+	}
+
+	&__message {
+		flex-grow: 1;
+		padding: 15px;
+
+		.message {
+			margin: 0;
+			font-size: 14px;
+			color: var(--color-text);
+			line-height: 1.4;
+		}
+	}
+
+	&__button {
+		flex-shrink: 0;
+		padding: 15px;
+
+		.close {
+			cursor: pointer;
+			color: var(--color-text-secondary);
+			font-size: 28px;
+			transition: color 0.2s;
+
+			&:hover {
+				color: var(--color-text);
+			}
+		}
+	}
+
+	// Tiện ích ẩn
+	.hide {
+		display: none !important;
+	}
+}
+
+// Responsive cho Mobile
+@media (max-width: 480px) {
+	.noticer {
+		width: auto;
+		left: 20px;
+		right: 20px;
+		top: 10px;
+		transform: translateY(-120%); // Mobile trượt từ trên xuống thay vì từ phải qua
+
+		&.open {
+			transform: translateY(0);
+		}
+	}
+}

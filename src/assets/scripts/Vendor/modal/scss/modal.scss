@@ -1,0 +1,168 @@
+// components/_modal.scss
+// Không cần @use 'abstracts/color' — chỉ cần đã @use nó ở style.scss gốc.
+
+// Biến không phải màu — giữ SCSS variable
+$transition-speed: 0.3s;
+$header-height: 56px;
+
+// Chống cuộn trang khi mở modal
+html.none-flow {
+	overflow: hidden;
+	body {
+		padding-right: 15px; // Tránh giật khung hình do mất thanh scroll
+	}
+}
+
+.modal {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 9999;
+	display: flex;
+	align-items: flex-start; // flex-start để hỗ trợ scroll cho nội dung dài
+	justify-content: center;
+	padding: 40px 0; // Khoảng cách an toàn với mép màn hình
+	overflow-y: auto; // Cho phép cuộn toàn bộ vùng modal
+	visibility: hidden; // Ẩn mặc định
+	pointer-events: none;
+	transition: visibility $transition-speed;
+
+	.message {
+		text-align: center;
+		font-size: 12pt;
+		color: var(--color-text);
+	}
+
+	// Trạng thái khi mở
+	&.open {
+		visibility: visible;
+		pointer-events: auto;
+
+		.modal__overlay {
+			opacity: 1;
+		}
+
+		.modal__wrapper {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	// Lớp nền
+	&__overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background: var(--color-overlay);
+		backdrop-filter: blur(4px); // Hiệu ứng làm mờ nền hiện đại
+		opacity: 0;
+		transition: opacity $transition-speed ease;
+		z-index: 1;
+	}
+
+	// Khung nội dung chính
+	&__wrapper {
+		position: relative;
+		z-index: 2;
+		background: var(--color-bg);
+		width: 90%;
+		max-width: 600px;
+		border-radius: 12px; // Bo góc mềm mại hơn
+		box-shadow: 0 20px 25px -5px var(--shadow-color), 0 10px 10px -5px var(--shadow-color);
+		display: flex;
+		flex-direction: column;
+		opacity: 0;
+		transform: translateY(20px); // Hiệu ứng trượt từ dưới lên
+		transition: opacity $transition-speed ease, transform $transition-speed cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.3s;
+
+		// Khi đang kéo thả, tắt transition để tránh delay theo tay
+		&[style*="top"] {
+			transition: opacity $transition-speed ease;
+		}
+	}
+
+	// Header - Khu vực kéo thả
+	&__header {
+		height: $header-height;
+		display: flex;
+		align-items: center;
+		border-bottom: 1px solid var(--color-border);
+		background: var(--color-surface);
+		padding: 0 10px 0 20px;
+		user-select: none; // Tránh bôi đen chữ khi kéo
+
+		.md-icon {
+			color: var(--color-info);
+			margin-right: 12px;
+			.dashicons { font-size: 20px; }
+		}
+
+		.md-title {
+			flex: 1;
+			.title {
+				margin: 0;
+				font-size: 16px;
+				font-weight: 600;
+				color: var(--color-text);
+			}
+		}
+
+		.close {
+			cursor: pointer;
+			padding: 12px;
+			color: var(--color-text-secondary);
+			transition: all 0.2s;
+			&:hover {
+				color: var(--color-error);
+				background: var(--color-error-soft);
+				border-radius: 6px;
+			}
+		}
+	}
+
+	// Body - Nội dung
+	&__body {
+		padding: 24px 20px;
+		font-size: 14px;
+		line-height: 1.6;
+		color: var(--color-text);
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		justify-content: flex-start;
+	}
+
+	// Footer - Các nút bấm
+	&__footer {
+		padding: 16px 20px;
+		border-top: 1px solid var(--color-border);
+		display: flex;
+		justify-content: flex-end;
+		gap: 10px;
+		background: var(--color-surface);
+	}
+
+	// Utility classes
+	.hide {
+		display: none !important;
+	}
+}
+
+// Responsive cho Mobile
+@media (max-width: 480px) {
+	.modal__wrapper {
+		width: 95%;
+		// Tắt kéo thả trên mobile để tránh xung đột thao tác vuốt
+		top: auto !important;
+		left: auto !important;
+		transform: translateY(20px) !important;
+	}
+
+	.modal.open .modal__wrapper {
+		transform: translateY(0) !important;
+	}
+}

@@ -1,0 +1,50 @@
+.accordion {
+     width: 100%;
+     &__item {
+          width: 100%;          
+          .accordion__content {
+               width: 100%;
+               max-height: 0;
+               transition: max-height 0.5s;               
+               overflow: hidden;
+          }
+          .accordion__button svg {
+               rotate: 180deg;
+          }
+          &.active {
+               .accordion__content {   
+                      
+                    transition: max-height 0.5s;                                     
+               }
+               .accordion__heading {
+                    background-color: #2271b1;
+               }
+               .accordion__button svg {
+                    rotate: 0deg;
+               }
+               
+          }
+           
+     }
+     &__heading { 
+          margin: 0;
+          //border-bottom: 1px solid #bbb;
+          width: 100%;
+          display: flex;
+          flex-direction: row; 
+          align-items: center;
+
+          background-color: #497da8;   
+          color: white;     
+     }
+     &__title {
+          padding: 15px;
+          width: 95%;
+          cursor: pointer;
+     }
+     &__button {
+          text-align: right;
+          cursor: pointer;
+     }
+    
+}
