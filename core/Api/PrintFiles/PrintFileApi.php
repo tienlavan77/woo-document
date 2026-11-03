@@ -1,22 +1,27 @@
 <?php
+
 namespace App\Api\PrintFiles;
 
 use App\Api\Api;
-use App\Middlewares\JwtAuthenticate;
 use App\Models\PrintFiles\PrintFileModel;
-use WP_Error;
 use WP_REST_Request;
+
+if (!defined('ABSPATH')) {
+    exit;
+}
 
 class PrintFileApi extends Api {
     protected static $instance;
+
     public static function get_instance() {
         if (is_null(self::$instance)) self::$instance = new self();
         return self::$instance;
     }
 
     public function __construct() {
+        self::$instance = $this;
         $this->model = new PrintFileModel();
-        $this->routesRegister();
+        parent::__construct();
     }
 
     public function routesRegister() {
@@ -66,58 +71,57 @@ class PrintFileApi extends Api {
     }
 
     public function permission(WP_REST_Request $request) {
-        $authenticated = JwtAuthenticate::JwtAuthenticate($request);
-        if (is_wp_error($authenticated)) return $authenticated;
-        if (!current_user_can('edit_shop_orders')) {
-            return new WP_Error('rest_forbidden', 'Bạn không có quyền quản lý file in.', ['status' => 403]);
-        }
-        return true;
+        return $this->checkJwtAndCapability(
+            $request,
+            'edit_shop_orders',
+            'Bạn không có quyền quản lý file in.'
+        );
     }
 
     public function listFiles(WP_REST_Request $request) {
-        return $this->success($this->model->listAssets($request->get_param('page'), $request->get_param('count'), $request->get_param('search')));
+        return $this->sendSuccess($this->model->listAssets($request->get_param('page'), $request->get_param('count'), $request->get_param('search')));
     }
 
     public function listMaterials() {
         $result = $this->model->listMaterials();
-        return is_wp_error($result) ? $result : $this->success(['materials' => $result]);
+        return is_wp_error($result) ? $result : $this->sendSuccess(['materials' => $result]);
     }
 
     public function listPrintOptions() {
         $result = $this->model->listPrintOptions();
-        return is_wp_error($result) ? $result : $this->success($result);
+        return is_wp_error($result) ? $result : $this->sendSuccess($result);
     }
 
     public function uploadFile(WP_REST_Request $request) {
         $result = $this->model->uploadAsset($_FILES['file'] ?? null);
-        return is_wp_error($result) ? $result : $this->success($this->model->assetPayloadForApi($result), 'Tải file in thành công.', 201);
+        return is_wp_error($result) ? $result : $this->sendSuccess($this->model->assetPayloadForApi($result), 'Tải file in thành công.', 201);
     }
 
     public function getFile(WP_REST_Request $request) {
         $result = $this->model->getAsset($request->get_param('id'));
-        return is_wp_error($result) ? $result : $this->success($this->model->assetPayloadForApi($result));
+        return is_wp_error($result) ? $result : $this->sendSuccess($this->model->assetPayloadForApi($result));
     }
 
     public function deleteFile(WP_REST_Request $request) {
         $result = $this->model->deleteAsset($request->get_param('id'));
-        return is_wp_error($result) ? $result : $this->success(null, 'Đã xóa file khỏi thư viện.');
+        return is_wp_error($result) ? $result : $this->sendSuccess(null, 'Đã xóa file khỏi thư viện.');
     }
 
     public function listJobs(WP_REST_Request $request) {
         $result = $this->model->getOrderJobs($request->get_param('order_id'));
-        return is_wp_error($result) ? $result : $this->success($result);
+        return is_wp_error($result) ? $result : $this->sendSuccess($result);
     }
 
     public function createJob(WP_REST_Request $request) {
         $data = $request->get_json_params();
         $result = $this->model->createJob($request->get_param('order_id'), is_array($data) ? $data : []);
-        return is_wp_error($result) ? $result : $this->success($result, 'Đã gắn file và lưu phiếu in.', 201);
+        return is_wp_error($result) ? $result : $this->sendSuccess($result, 'Đã gắn file và lưu phiếu in.', 201);
     }
 
     public function createProductTicket(WP_REST_Request $request) {
         $data = $request->get_json_params();
         $result = $this->model->createProductTicket($request->get_param('order_id'), is_array($data) ? $data : []);
-        return is_wp_error($result) ? $result : $this->success($result, 'Đã lưu phiếu thành phẩm.', 201);
+        return is_wp_error($result) ? $result : $this->sendSuccess($result, 'Đã lưu phiếu thành phẩm.', 201);
     }
 
     public function detachAsset(WP_REST_Request $request) {
@@ -125,34 +129,34 @@ class PrintFileApi extends Api {
             $request->get_param('order_id'),
             $request->get_param('asset_id')
         );
-        return is_wp_error($result) ? $result : $this->success(null, 'Đã gỡ file khỏi đơn hàng.');
+        return is_wp_error($result) ? $result : $this->sendSuccess(null, 'Đã gỡ file khỏi đơn hàng.');
     }
 
     public function updateJob(WP_REST_Request $request) {
         $data = $request->get_json_params();
         $result = $this->model->updateJob($request->get_param('id'), is_array($data) ? $data : []);
-        return is_wp_error($result) ? $result : $this->success($result, 'Đã cập nhật phiếu in.');
+        return is_wp_error($result) ? $result : $this->sendSuccess($result, 'Đã cập nhật phiếu in.');
     }
 
     public function updateProductTicket(WP_REST_Request $request) {
         $data = $request->get_json_params();
         $result = $this->model->updateProductTicket($request->get_param('id'), is_array($data) ? $data : []);
-        return is_wp_error($result) ? $result : $this->success($result, 'Đã cập nhật phiếu thành phẩm.');
+        return is_wp_error($result) ? $result : $this->sendSuccess($result, 'Đã cập nhật phiếu thành phẩm.');
     }
 
     public function deleteJob(WP_REST_Request $request) {
         $result = $this->model->deleteJob($request->get_param('id'));
-        return is_wp_error($result) ? $result : $this->success(null, 'Đã gỡ file khỏi đơn hàng.');
+        return is_wp_error($result) ? $result : $this->sendSuccess(null, 'Đã gỡ file khỏi đơn hàng.');
     }
 
     public function deleteProductTicket(WP_REST_Request $request) {
         $result = $this->model->deleteProductTicket($request->get_param('id'));
-        return is_wp_error($result) ? $result : $this->success(null, 'Đã gỡ phiếu thành phẩm.');
+        return is_wp_error($result) ? $result : $this->sendSuccess(null, 'Đã gỡ phiếu thành phẩm.');
     }
 
     public function deletePrintTicket(WP_REST_Request $request) {
         $result = $this->model->deletePrintTicket($request->get_param('id'));
-        return is_wp_error($result) ? $result : $this->success(null, 'Đã gỡ phiếu in.');
+        return is_wp_error($result) ? $result : $this->sendSuccess(null, 'Đã gỡ phiếu in.');
     }
 
     public function thumbnail(WP_REST_Request $request) {
@@ -189,9 +193,5 @@ class PrintFileApi extends Api {
         header('Content-Length: ' . filesize($path));
         readfile($path);
         exit;
-    }
-
-    private function success($data, $message = 'Thành công.', $status = 200) {
-        return new \WP_REST_Response(['status' => ['code' => $status, 'message' => $message, 'data' => $data]], $status);
     }
 }

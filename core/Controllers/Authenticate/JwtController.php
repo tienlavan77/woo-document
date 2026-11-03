@@ -48,6 +48,7 @@ class JwtController {
          error_log("Error creating JWT: " . $e->getMessage());
          throw new Exception("Could not create JWT."); // Ném ngoại lệ để xử lý ở tầng trên
       }
+      $type = 'Bearer';
       return ['exp' => $expire_at , 'token' =>  $jwt, 'type' => $type];      
    }
 

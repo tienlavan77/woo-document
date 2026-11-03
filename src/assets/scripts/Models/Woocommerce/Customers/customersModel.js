@@ -1,20 +1,17 @@
-import WooCommerceModel from "../wooCommerceModel";
+import WooCommerceModel from '../wooCommerceModel';
 
 export default class CustomersModel extends WooCommerceModel {
-   constructor() {
+   constructor(storageKey = 'cs_quotation') {
       super();
       this.api = '/wp-json/wc/v3/customers';
-      this.storageName = 'cs_quotation';
-      this.onlyLocal = true
-
+      this.storageName = storageKey;
+      this.onlyLocal = true;
    }
-  
-   async get( id ) {
+
+   async get(id) {
       let params = id ? `/${id}` : '';
       let data = await super.get(params);
-      let { _links, ...rest} = data;
+      let { _links, ...rest } = data;
       return rest;
    }
- 
 }
-

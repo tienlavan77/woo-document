@@ -1,37 +1,26 @@
 import BaseModel from '../../baseModel';
-import Model from '../../model';
+import CustomersModel from '../../Woocommerce/Customers/customersModel';
+import ProductModel from '../../Woocommerce/Products/productModel';
 import VatModel from '../../Woocommerce/Vat/vatModel';
-
-class CustomerInvoiceModel extends Model {
-   constructor() {
-      super();
-      this.storageName = 'cs_invoice';
-      this.onlyLocal = true      
-   }
-}
-
-class ProductInvoiceModel extends Model {
-   constructor() {
-      super()
-      this.data = [];
-      this.storageName = 'products_invoice';
-      this.onlyLocal = true
-      
-   }
-}
 
 export default class InvoiceModel extends BaseModel {
    constructor() {
-      super(new CustomerInvoiceModel(), new ProductInvoiceModel())
-      this.vat = new VatModel()  
-      this.init()
+      const productModel = new ProductModel('products_invoice');
+      productModel.data = [];
+      super(
+         new CustomersModel('cs_invoice'),
+         productModel
+      );
+      this.vat = new VatModel();
+      this.init();
    }
+
    async init() {
       try {
-        super.init()
-        await this.vat.init()
-      } catch(error) {
-         
+         super.init();
+         await this.vat.init();
+      } catch (error) {
+         if (import.meta.env.DEV) console.error("InvoiceModel Init Error:", error);
       }
-   }   
+   }
 }

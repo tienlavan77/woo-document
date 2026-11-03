@@ -1,59 +1,50 @@
-import ModuleLoader from '../../Vendor/helpers/loadModule'
-import TextHelper from "../../Vendor/helpers/textHelper";
+import ModuleLoader from '../../Vendor/helpers/loadModule';
+import TextHelper from '../../Vendor/helpers/textHelper';
+import App from '../../app.js';
 
-/**
- * MasterWooCommerce: Lớp điều phối (Dispatcher) cho các Controller của WooCommerce
- * Nhiệm vụ: Xác định trang hiện tại và load module tương ứng một cách linh hoạt.
- */
 export default class WooCommerceController {
    /**
-    * @param {Object} dependencies - Các tiện ích dùng chung
-    * @param {Object} dependencies.notice - Instance của lớp thông báo
-    * @param {Object} dependencies.modal - Instance của lớp Modal
+    * @param {Object} [pageData] - Thông tin định tuyến { page, type } được truyền từ App
     */
-   constructor() {
-      // Đường dẫn gốc tới thư mục chứa các controller
-     
-     
+   constructor(pageData = null) {
+      this.pageData = pageData || App.getPageData();
+
       // Khởi chạy hệ thống
-      this.init();
+      this.init(this.pageData);
    }
 
    /**
     * Danh mục các Controller và file tương ứng
     * Sử dụng Getter để trả về object cấu hình
     */
-   get routeMap() {      
+   get routeMap() {
       return {
          'editOrder': 'Orders/orderController',
          'postOrder': 'Orders/postOrderController',
          'editProduct': 'Products/editProductController',
-         'postProduct': 'Products/postProductController', // load controller thêm sản phẩm trong trang chỉnh sửa sản phẩm
+         'postProduct': 'Products/postProductController',
          'usersUser': 'Customers/customersController',
-         'usereditUser': null, // Sẽ bổ sung sau       
+         'usereditUser': null,
       };
    }
 
    /**
-    * Khởi tạo logic chính: Đọc metaTag và kích hoạt controller
+    * Khởi tạo logic chính: Nhận dữ liệu định tuyến từ App và kích hoạt controller
+    * @param {Object} [routeData]
     */
-   async init() {
+   async init(routeData = null) {
       try {
-         const metaTag = document.querySelector("meta#pagenow");
+         const { page, type } = routeData || this.pageData || {};
 
-         // 1. Lấy dữ liệu trang từ metaTag (Giả định metaTag đã tồn tại toàn cục)
-         if (typeof metaTag === 'undefined' || !metaTag.dataset.page) {
-            console.warn("MasterWooCommerce: Không tìm thấy thông tin trang (metaTag).");
+         if (!page || !type) {
+            console.warn("MasterWooCommerce: Không tìm thấy thông tin trang (pageData).");
             return;
          }
 
-         const { page, type } = JSON.parse(metaTag.dataset.page);
-
-         // 2. Tạo key để định danh controller (Ví dụ: "edit" + "Product" = "editProduct")
-         // Lưu ý: Sử dụng TextHelper để chuẩn hóa string nếu cần
+         // Tạo key để định danh controller (Ví dụ: "edit" + "Product" = "editProduct")
          const controllerKey = `${page}${TextHelper.capitalize(type)}`;
 
-         // 3. Gọi hàm load module
+         // Gọi hàm load module
          await this._dispatch(controllerKey);
 
       } catch (error) {
@@ -75,8 +66,6 @@ export default class WooCommerceController {
 
       console.log(`🚀 Loading Controller: ${key} từ file ${fileName}`);
 
-      // Gọi hàm loadModule (Giả định loadModule là hàm toàn cục hoặc được import)
       return ModuleLoader.load(`WooCommerce/${fileName}`);
    }
-  
 }

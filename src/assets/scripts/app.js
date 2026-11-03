@@ -1,13 +1,15 @@
 import ModuleLoader from './Vendor/helpers/loadModule.js';
 import AuthController from './Controllers/Admin/Authenticate/authController.js';
 
-/**
- * Lớp khởi tạo ứng dụng chính (App Entry Point)
- * Quản lý việc điều phối (Routing) và tải các Controller dựa trên trang hiện tại.
- */
 export default class App {
+    static pageData = null;
+
+    static getPageData() {
+        return App.pageData;
+    }
+
     constructor() {
-        this.auth = new AuthController()
+        this.auth = new AuthController();
         /**
          * Cấu trúc Route Map: Ánh xạ giữa tên trang (page key) và đường dẫn Controller.
          * Giúp dễ dàng thêm trang mới mà không cần sửa logic khởi tạo.
@@ -22,12 +24,12 @@ export default class App {
 
     /**
      * Phương thức khởi tạo ứng dụng
-     * Đọc thông tin từ Meta tag và kích hoạt Controller tương ứng.
+     * Đọc thông tin từ Meta tag một lần duy nhất và kích hoạt Controller tương ứng.
      */
     async init() {
-        // 1. Kiểm tra sự tồn tại của thẻ meta định danh trang
         if (App.isStarted) return;
         App.isStarted = true;
+
         const metaTag = document.querySelector("meta#pagenow");
         if (!metaTag) {
             console.warn("[App] Không tìm thấy thẻ meta#pagenow. Ứng dụng không thể xác định trang hiện tại.");
@@ -35,7 +37,6 @@ export default class App {
         }
 
         try {
-            // 2. Phân tách dữ liệu trang từ dataset
             const pageData = JSON.parse(metaTag.dataset.page || '{}');
             const currentPage = pageData.page;
 
@@ -43,20 +44,16 @@ export default class App {
                 throw new Error("Dữ liệu trang (page) không tồn tại trong dataset.");
             }
 
-            // 3. Tìm đường dẫn controller từ Route Map
+            // Lưu thông tin định tuyến đã parse để truyền xuống các bộ nạp controller
+            App.pageData = pageData;
+
             const controllerPath = this.routeMap[currentPage];
 
             if (controllerPath) {
-                // Tải controller động bằng ModuleLoader
-                // Sử dụng await vì ModuleLoader.load thường trả về một Promise
-                await ModuleLoader.load(controllerPath);
+                await ModuleLoader.load(controllerPath, pageData);
             } else {
                 console.warn(`[App] Không tìm thấy controller nào được cấu hình cho trang: "${currentPage}"`);
             }
-
-            // 4. (Tùy chọn) Xử lý các UI chung như Sidebar
-            // this.handleSidebarCollapse();
-
         } catch (error) {
             console.error("[App] Lỗi nghiêm trọng khi khởi tạo ứng dụng:", error);
         }

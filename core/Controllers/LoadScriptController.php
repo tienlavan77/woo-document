@@ -45,8 +45,11 @@ class LoadScriptController {
             // WP_DEBUG dùng Vite dev server. Luôn đổi version để trình duyệt
             // không giữ lại module cũ sau khi sửa source frontend.
             $dev_version = (string) time();
-            wp_enqueue_script('document-client', 'https://192.168.1.181:5173/@vite/client', [], $dev_version, true);
-            wp_enqueue_script('document-plugin', 'https://192.168.1.181:5173/src/main.js', [], $dev_version, true);
+            $dev_server = defined('DOCUMENT_VITE_DEV_SERVER') && DOCUMENT_VITE_DEV_SERVER
+                ? rtrim((string) DOCUMENT_VITE_DEV_SERVER, '/')
+                : 'https://192.168.1.181:5173';
+            wp_enqueue_script('document-client', $dev_server . '/@vite/client', [], $dev_version, true);
+            wp_enqueue_script('document-plugin', $dev_server . '/src/main.js', [], $dev_version, true);
         } else {
             $manifest_path = PLUGIN_DIR_DOCUMENT . 'dist/.vite/manifest.json';
             

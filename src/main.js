@@ -1,8 +1,7 @@
-import './style.scss';
-import App from './assets/scripts/app.min.js'
+import "../src/style.scss";
+import App from "./assets/scripts/app.js";
 
-// Khởi chạy ứng dụng ngay sau khi DOM sẵn sàng
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
    const app = new App();
    app.init();
 });

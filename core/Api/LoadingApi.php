@@ -1,25 +1,33 @@
 <?php
+
 namespace App\Api;
 
 use App\Support\HookManager;
+use App\Support\ServiceContainer;
 use App\Api\Setting\SettingApi;
 use App\Api\Templates\TemplatesApi;
 use App\Api\Authenticate\AuthenticateApi;
 use App\Api\Documents\DocumentApi;
 use App\Api\PrintFiles\PrintFileApi;
 
+if (!defined('ABSPATH')) {
+	exit;
+}
+
 class LoadingApi {
 	private $hooks;
+	private $container;
 	private $api_classes = [
-		SettingApi::class,
-		TemplatesApi::class,
-		AuthenticateApi::class,
-		DocumentApi::class,
-		PrintFileApi::class,
+		'settingApi'      => SettingApi::class,
+		'templatesApi'    => TemplatesApi::class,
+		'authenticateApi' => AuthenticateApi::class,
+		'documentApi'     => DocumentApi::class,
+		'printFileApi'    => PrintFileApi::class,
 	];
 	
-	public function __construct(HookManager $hooks) {
+	public function __construct(HookManager $hooks, ?ServiceContainer $container = null) {
 		$this->hooks = $hooks;
+		$this->container = $container;
 		$this->registerApis();
 	}
 	
@@ -28,8 +36,12 @@ class LoadingApi {
 	}
 	
 	public function initializeApis() {
-		foreach ($this->api_classes as $api_class) {
-			if (class_exists($api_class) && method_exists($api_class, 'get_instance')) {				
+		foreach ($this->api_classes as $service_name => $api_class) {
+			if ($this->container && $this->container->has($service_name)) {
+				$this->container->get($service_name);
+				continue;
+			}
+			if (class_exists($api_class) && method_exists($api_class, 'get_instance')) {
 				$api_class::get_instance();
 			}
 		}

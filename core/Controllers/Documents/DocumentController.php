@@ -18,16 +18,17 @@ class DocumentController extends Controller { // Kế thừa từ Controller
    private $uploaddir;
    private $uploaduri;
 
-   public static function get_instance(HookManager $hooks) {
+   public static function get_instance(?HookManager $hooks = null) {
       if (is_null(self::$instance)) {
-          self::$instance = new self($hooks);
+          self::$instance = new self($hooks ?? new HookManager());
       }
       return self::$instance;
    }
 
-   private function __construct(HookManager $hooks) {
+   public function __construct(HookManager $hooks) {
       $this->hooks = $hooks;
       $this->model = new DocumentModel();
+      self::$instance = $this;
   
       $this->registerHooks();
    }
@@ -275,7 +276,7 @@ class DocumentController extends Controller { // Kế thừa từ Controller
       $path = $request->get_param('path');
      
       if (empty($path)) {
-         return new WP_Error('missing_param', 'Thiếu đường dẫn file cần xóa.', ['status' => 400]);
+         return $this->sendError('missing_param', 'Thiếu đường dẫn file cần xóa.', 400);
       }
 
       $result = $this->model->deleteFileSafely($path);

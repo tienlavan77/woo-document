@@ -1,4 +1,5 @@
 <?php
+
 namespace App;
 
 use App\Support\ServiceContainer;
@@ -7,12 +8,27 @@ use App\Support\MenuRegistry;
 use App\Support\HookManager;
 use App\Controllers\Admin\CheckTokenController;
 use App\Controllers\LoadScriptController;
-use App\Controllers\Menus\RegMenuController;
 use App\Controllers\Woocommerce\MasterSupporterController;
+use App\Controllers\Woocommerce\Product\ProductController;
+use App\Controllers\Woocommerce\User\UserController;
+use App\Controllers\Woocommerce\Order\OrderController;
+use App\Controllers\Woocommerce\Vat\VatController;
+use App\Controllers\Woocommerce\Quotation\SubQuotationController;
+use App\Controllers\Woocommerce\Delivery\SubDeliveryController;
+use App\Controllers\Woocommerce\Invoice\SubInvoiceController;
 use App\Controllers\Documents\DocumentController;
 use App\Support\SystemFolderManager;
 use App\Support\PrintDatabase;
 use App\Api\LoadingApi;
+use App\Api\Setting\SettingApi;
+use App\Api\Templates\TemplatesApi;
+use App\Api\Authenticate\AuthenticateApi;
+use App\Api\Documents\DocumentApi;
+use App\Api\PrintFiles\PrintFileApi;
+
+if (!defined('ABSPATH')) {
+   exit;
+}
 
 class App {
    protected static $instance;
@@ -51,9 +67,25 @@ class App {
       $this->container->singleton('hooks', fn($c) => $this->hook_manager);
       $this->container->singleton('checkToken', fn($c) => new CheckTokenController($c->get('hooks')));
       $this->container->singleton('loadScript', fn($c) => new LoadScriptController($c->get('hooks')));
-      $this->container->singleton('documentController', fn($c) => DocumentController::get_instance($c->get('hooks')));
-      $this->container->singleton('masterSupporter', fn($c) => new MasterSupporterController($c->get('hooks')));
-      $this->container->singleton('loadingApi', fn($c) => new LoadingApi($c->get('hooks')));
+      $this->container->singleton('documentController', fn($c) => new DocumentController($c->get('hooks')));
+
+      // WooCommerce sub-controllers managed through container & HookManager
+      $this->container->singleton('woo.product', fn($c) => new ProductController($c->get('hooks')));
+      $this->container->singleton('woo.user', fn($c) => new UserController($c->get('hooks')));
+      $this->container->singleton('woo.order', fn($c) => new OrderController($c->get('hooks')));
+      $this->container->singleton('woo.vat', fn($c) => new VatController($c->get('hooks')));
+      $this->container->singleton('woo.subQuotation', fn($c) => new SubQuotationController($c->get('hooks')));
+      $this->container->singleton('woo.subDelivery', fn($c) => new SubDeliveryController($c->get('hooks')));
+      $this->container->singleton('woo.subInvoice', fn($c) => new SubInvoiceController($c->get('hooks')));
+      $this->container->singleton('masterSupporter', fn($c) => new MasterSupporterController($c->get('hooks'), $c));
+
+      // REST APIs managed through container
+      $this->container->singleton('settingApi', fn($c) => new SettingApi());
+      $this->container->singleton('templatesApi', fn($c) => new TemplatesApi());
+      $this->container->singleton('authenticateApi', fn($c) => new AuthenticateApi());
+      $this->container->singleton('documentApi', fn($c) => new DocumentApi($c->get('documentController'), $c->get('hooks')));
+      $this->container->singleton('printFileApi', fn($c) => new PrintFileApi());
+      $this->container->singleton('loadingApi', fn($c) => new LoadingApi($c->get('hooks'), $c));
    }
     
    /**
@@ -75,10 +107,10 @@ class App {
          ]);
          
          $this->container->get('checkToken');
+         $this->container->get('documentController');
          $this->container->get('loadingApi');
          $this->container->get('loadScript');
          $this->container->get('masterSupporter');
-         $this->container->get('documentController');
       } else {
          $this->hook_manager->addAction('admin_notices', function() {
             echo $this->plugin_manager->getErrorHTML();

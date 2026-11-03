@@ -1,46 +1,34 @@
-import TextHelper from '../../Vendor/helpers/textHelper'
-import ModuleLoader from "../../Vendor/helpers/loadModule"
+import ModuleLoader from "../../Vendor/helpers/loadModule";
+import TextHelper from "../../Vendor/helpers/textHelper";
+import App from "../../app.js";
 
-/**
- * Lớp Admin - Quản lý việc khởi tạo và tải các module điều hướng trong khu vực Admin.
- */
 export default class AdminLoadController {
-   // Đường dẫn gốc tới thư mục Controllers
-
    /**
-    * @param {Object} props - Nhận các công cụ hỗ trợ như notice, modal từ ứng dụng chính.
+    * @param {Object} [pageData] - Thông tin định tuyến { page, type } được truyền từ App
     */
-   constructor() { 
-   
+   constructor(pageData = null) {
+      this.pageData = pageData || App.getPageData();
+
       // Danh sách các controller có thể tải
-      // Việc đóng gói vào object giúp dễ quản lý và kiểm tra tồn tại (mapping)
       this.loadController = {
          adminSetting: () => this._importModule('Admin/Setting/settingController'),
          adminQuotation: () => this._importModule('Admin/Quotation/quotationAdminController'),
          adminDelivery: () => this._importModule('Admin/Delivery/deliveryAdminController'),
          adminInvoice: () => this._importModule('Admin/Invoice/invoiceAdminController')
-         // Bạn có thể thêm các controller khác tại đây
       };
-      this.init();
+      this.init(this.pageData);
    }
 
    /**
-    * Phương thức khởi tạo: Đọc dữ liệu từ meta tag và kích hoạt module tương ứng.
+    * Phương thức khởi tạo: Nhận dữ liệu định tuyến từ App và kích hoạt module tương ứng.
+    * @param {Object} [routeData]
     */
-   init() {
+   init(routeData = null) {
       try {
-         const metaTag = document.querySelector("meta#pagenow");
-         if (!metaTag) {
-               console.warn("Admin Init: Không tìm thấy thẻ meta#pagenow");
-               return;
-         }
-
-         // Giải mã JSON từ thuộc tính data của thẻ meta
-         // const pageType = JSON.parse(metaTag.dataset.page);
-         const { page, type } = JSON.parse(metaTag.dataset.page);;
+         const { page, type } = routeData || this.pageData || {};
 
          if (!page || !type) {
-               throw new Error("Dữ liệu page hoặc type không hợp lệ.");
+            throw new Error("Dữ liệu page hoặc type không hợp lệ.");
          }
 
          // Tạo tên hàm cần gọi (ví dụ: admin + Setting = adminSetting)
@@ -48,9 +36,9 @@ export default class AdminLoadController {
 
          // Kiểm tra xem phương thức có tồn tại trong danh sách loadController không
          if (typeof this.loadController[methodName] === 'function') {
-               this.loadController[methodName]();
+            this.loadController[methodName]();
          } else {
-               console.error(`Admin Init: Không tìm thấy controller cho "${methodName}"`);
+            console.error(`Admin Init: Không tìm thấy controller cho "${methodName}"`);
          }
 
       } catch (error) {
@@ -64,6 +52,6 @@ export default class AdminLoadController {
     * @private
     */
    _importModule(path) {
-      return ModuleLoader.load( `${path}` );
+      return ModuleLoader.load(`${path}`);
    }
 }
