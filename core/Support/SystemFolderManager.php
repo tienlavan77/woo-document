@@ -179,7 +179,7 @@ class SystemFolderManager {
     private static function isAbsolutePath($path) {
         $path = wp_normalize_path((string) $path);
 
-        return str_starts_with($path, '/') || (bool) preg_match('/^[A-Za-z]:\//', $path);
+        return strpos($path, '/') === 0 || (bool) preg_match('/^[A-Za-z]:\//', $path);
     }
 
     private static function normalizeSettings($input) {
@@ -300,7 +300,7 @@ class SystemFolderManager {
 
     private static function normalizeRelativePath($path) {
         $path = trim(wp_normalize_path(str_replace('\\', '/', $path)), '/');
-        if ($path === '' || str_starts_with($path, '/') || preg_match('/^[A-Za-z]:\//', $path)) {
+        if ($path === '' || strpos($path, '/') === 0 || preg_match('/^[A-Za-z]:\//', $path)) {
             return new WP_Error('folder_path_invalid', 'Folder trực tiếp phải là đường dẫn tương đối trong uploads.', ['status' => 400]);
         }
 

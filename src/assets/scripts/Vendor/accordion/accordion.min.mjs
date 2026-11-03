@@ -1,9 +1,12 @@
+// Provides module declarations and business logic for accordion.min.mjs.
+
 import createFormItem, { isNodeDOM } from "../helpers/formgroup.min.mjs";
 
+// Defines Accordion function behavior for accordion.min.mjs.
 const Accordion = function () {
 	let acc = this;
 
-	// chạy khởi tạo 1 collapse
+	// Executes documented symbol logic in accordion.min.mjs.
 	acc.init = ({ id, ...items }) => {
 		let accordion = document.querySelector(`#${id}`);
 		if (accordion) acc.collectAccordion({ id, ...items });
@@ -11,7 +14,7 @@ const Accordion = function () {
 		return accordion;
 	};
 
-	//thu thập các thông tin khi người dùng tạo ra sẳn accordion
+	// Executes documented symbol logic in accordion.min.mjs.
 	acc.collectAccordion = ({ id, onlyAccordionOpen, ...item }) => {
 		let accordion = document.querySelector(`#${id}`);
 		let titles = accordion.querySelectorAll(".accordion__control");
@@ -111,7 +114,7 @@ const Accordion = function () {
 		let accordion = document.querySelector(`#${target}`);
 		let currentActive = accordion.className.indexOf("active");
 		let currentContent = accordion.querySelector(".accordion__content");
-		// currentActive !== -1 là
+		// Executes documented symbol logic in accordion.min.mjs.
 		if (currentActive !== -1) {
 			currentContent.style.maxHeight = null;
 		} else {

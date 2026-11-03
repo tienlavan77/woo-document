@@ -1,14 +1,14 @@
 import shell from 'shelljs';
 import fs from 'fs';
-
-// GIẢI PHÁP: Tạo hàm require giả lập cho ES Module để nạp các thư viện CommonJS gốc
-import { createRequire } from 'module';
-const require = createRequire(import.meta.url);
-const archiver = require('archiver');
+import { ZipArchive } from 'archiver';
 
 // 1. Chạy lệnh build Vite trước
 console.log('📦 1. Đang biên dịch tài nguyên với Vite...');
-shell.exec('npm run build');
+const build = shell.exec('npm run build');
+if (build.code !== 0) {
+    console.error('❌ Build thất bại, dừng deploy để không đóng gói tài nguyên cũ.');
+    process.exit(build.code || 1);
+}
 
 // 2. Tạo một thư mục tạm để chuẩn bị cấu trúc cho WordPress
 const tempDir = './temp-build';
@@ -36,13 +36,16 @@ filesToCopy.forEach(file => {
 // 3. Tiến hành nén thư mục tạm thành file document.zip chuẩn WordPress
 console.log('🤐 3. Đang tiến hành nén thành file document.zip...');
 
-const output = fs.createWriteStream('./document.zip');
-const archive = archiver('zip', { zlib: { level: 9 } });
+const productionDir = './production';
+const outputPath = `${productionDir}/document.zip`;
+fs.mkdirSync(productionDir, { recursive: true });
+const output = fs.createWriteStream(outputPath);
+const archive = new ZipArchive({ zlib: { level: 9 } });
 
 output.on('close', () => {
     const sizeInMB = (archive.pointer() / 1024 / 1024).toFixed(2);
     console.log(`\n🚀 NÉN THÀNH CÔNG!`);
-    console.log(`📂 Đã tạo ra file: ./document.zip (${sizeInMB} MB)`);
+    console.log(`📂 Đã tạo ra file: ${outputPath} (${sizeInMB} MB)`);
     console.log(`✨ Bạn có thể lấy file này up trực tiếp lên admin WordPress.`);
     
     shell.rm('-rf', tempDir);

@@ -20,6 +20,7 @@ export default class PrintFileController extends Controller {
       await this.model.init();
       this.orderId = this._getOrderId();
       if (!this.orderId) return;
+      this.viewer.setActiveAssetStorageKey(`tsp_print_active_asset_${this.orderId}`);
 
       const mount = this._getOrderItemsMount();
       if (!mount) return;
@@ -84,6 +85,7 @@ export default class PrintFileController extends Controller {
          return;
       }
       this.jobs = response.status.data.jobs || [];
+      this.productJobs = response.status.data.product_jobs || this.jobs.filter((job) => Number(job.order_item_id) > 0);
       this.templateContext = {
          ...(response.status.data.template_context || {}),
          suppliers: this.printOptions.suppliers,
@@ -92,6 +94,7 @@ export default class PrintFileController extends Controller {
       const orderItems = response.status.data.order_items || this._getOrderItems();
       this.viewer.renderJobs(this.jobs, {
          orderItems,
+         orderId: this.orderId,
          materials: this.printOptions.materials,
          suppliers: this.printOptions.suppliers,
          printingMethods: this.printOptions.printing_methods,
@@ -102,6 +105,8 @@ export default class PrintFileController extends Controller {
          onSave: (job, data) => this.saveJob(job, data),
          onSheet: (job, type) => this.showSheet(job, type),
          onRemove: (job, type) => this.removeJob(job, type),
+         onRemoveAsset: (asset) => this.removeAssetFromOrder(asset),
+         allProductJobs: this.productJobs,
          onActiveChange: () => this.loadThumbnails(),
       });
       this.loadThumbnails();
@@ -225,6 +230,7 @@ export default class PrintFileController extends Controller {
    }
 
    async assignAsset(asset) {
+      if (!asset?.id) return;
       const response = await this.model.createJob(this.orderId, {
          asset_id: asset.id,
          order_item_id: 0,
@@ -237,29 +243,51 @@ export default class PrintFileController extends Controller {
          return;
       }
       this.viewer.modal.close();
+      // Make the file just selected the active card after the API reload.
+      this.viewer.setActiveAsset(asset.id);
       this.viewer.showNotice('Đã gán file vào đơn hàng.', 'success');
       await this.reloadJobs();
    }
 
    async saveJob(job, data) {
-      const response = job?.id
-         ? await this.model.updateJob(job.id, data)
-         : await this.model.createJob(this.orderId, {
-            ...data,
-            asset_id: job.asset_id,
-         });
-      if (response?.status?.code !== 200 && response?.status?.code !== 201) {
-         this.viewer.showNotice(response?.status?.message || 'Không thể lưu phiếu in.', 'error');
-         return;
+      if (this.savingJob) return false;
+      this.savingJob = true;
+      try {
+         // A new product ticket uses the draft job (id = 0), even when the
+         // current file already has a base assignment job.
+         const isProductTicket = data.document_type === 'product';
+         const response = isProductTicket
+            ? (Number(job?.id) > 0
+               ? await this.model.updateProductTicket(job.id, data)
+               : await this.model.createProductTicket(this.orderId, data))
+            : (Number(job?.id) > 0
+               ? await this.model.updateJob(job.id, data)
+               : await this.model.createJob(this.orderId, {
+                  ...data,
+                  asset_id: job?.asset_id,
+               }));
+         if (response?.status?.code !== 200 && response?.status?.code !== 201) {
+            this.viewer.showNotice(response?.status?.message || 'Không thể lưu phiếu in.', 'error');
+            return false;
+         }
+         const savedJob = response.status.data || {};
+         if (data.document_type === 'product') {
+            const savedJobId = savedJob.id || job?.id;
+            if (savedJobId) this.viewer.selectedProductJobId = savedJobId;
+            this.viewer.editingProductByAsset.clear();
+         }
+         const title = data.document_type === 'print' ? 'phiếu in' : 'phiếu thành phẩm';
+         this.viewer.showNotice(`Đã lưu ${title}.`, 'success');
+         // Render the complete post-save button set from the fresh server
+         // response instead of mutating only the current row.
+         await this.reloadJobs();
+         return savedJob;
+      } catch (error) {
+         this.viewer.showNotice(error?.message || 'Không thể lưu phiếu in.', 'error');
+         return false;
+      } finally {
+         this.savingJob = false;
       }
-      const savedJob = response.status.data || {};
-      if (data.document_type === 'product' && savedJob.id) {
-         this.viewer.selectedJobByAsset.set(String(job.asset_id), savedJob.id);
-         this.viewer.editingProductByAsset.delete(String(job.asset_id));
-      }
-      const title = data.document_type === 'print' ? 'phiếu in' : 'phiếu thành phẩm';
-      this.viewer.showNotice(`Đã lưu ${title}.`, 'success');
-      await this.reloadJobs();
    }
 
    async preview(job) {
@@ -301,18 +329,43 @@ export default class PrintFileController extends Controller {
    }
 
    async removeJob(job, type = 'product') {
-      const response = type === 'print'
-         ? await this.model.deletePrintTicket(job.id)
-         : await this.model.deleteJob(job.id);
+      if (!job?.id || this.removingJobId) return;
+      this.removingJobId = job.id;
+      try {
+         const response = type === 'print'
+            ? await this.model.deletePrintTicket(job.id)
+            : await this.model.deleteProductTicket(job.id);
+         if (response?.status?.code !== 200) {
+            this.viewer.showNotice(response?.status?.message || 'Không thể gỡ phiếu khỏi order.', 'error');
+            return;
+         }
+         if (type === 'product') {
+            if (String(this.viewer.selectedProductJobId) === String(job.id)) this.viewer.selectedProductJobId = null;
+            this.viewer.editingProductByAsset.clear();
+         }
+         this.viewer.showNotice(type === 'print' ? 'Đã gỡ phiếu in.' : 'Đã gỡ phiếu thành phẩm.', 'success');
+         await this.reloadJobs();
+      } catch (error) {
+         this.viewer.showNotice(error?.message || 'Không thể gỡ phiếu khỏi order.', 'error');
+      } finally {
+         this.removingJobId = null;
+      }
+   }
+
+   async removeAssetFromOrder(asset) {
+      if (!asset?.id) return;
+
+      const response = await this.model.detachAsset(this.orderId, asset.id);
       if (response?.status?.code !== 200) {
-         this.viewer.showNotice(response?.status?.message || 'Không thể gỡ phiếu khỏi order.', 'error');
+         this.viewer.showNotice(response?.status?.message || 'Không thể gỡ file khỏi đơn hàng.', 'error');
          return;
       }
-      if (type === 'product') {
-         this.viewer.selectedJobByAsset.delete(String(job.asset_id));
-         this.viewer.editingProductByAsset.delete(String(job.asset_id));
-      }
-      this.viewer.showNotice(type === 'print' ? 'Đã gỡ phiếu in.' : 'Đã gỡ phiếu thành phẩm.', 'success');
+      const key = String(asset.id);
+      this.viewer.selectedJobByAsset.delete(key);
+      this.viewer.newProductItemByAsset.delete(key);
+      this.viewer.editingProductByAsset.delete(key);
+      this.viewer.previousProductByAsset.delete(key);
+      this.viewer.showNotice('Đã gỡ file khỏi đơn hàng. File vẫn còn trong thư viện.', 'success');
       await this.reloadJobs();
    }
 }

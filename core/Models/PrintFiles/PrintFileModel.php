@@ -231,15 +231,26 @@ class PrintFileModel {
             'SELECT j.*, p.id AS print_ticket_id, p.document_status AS print_ticket_status, p.specs_json AS print_ticket_specs_json,
                     a.original_name, a.storage_key, a.thumbnail_key, a.extension, a.mime_type, a.size_bytes, a.page_count, a.width, a.height, a.thumbnail_status, a.thumbnail_error
              FROM ' . PrintDatabase::jobsTable() . ' j
-             LEFT JOIN ' . PrintDatabase::ticketsTable() . ' p ON p.order_id = j.order_id AND p.asset_id = j.asset_id
+             LEFT JOIN ' . PrintDatabase::ticketsTable() . ' p ON p.asset_id = j.asset_id
+             INNER JOIN ' . PrintDatabase::orderAssetsTable() . ' oa ON oa.order_id = j.order_id AND oa.asset_id = j.asset_id
              INNER JOIN ' . PrintDatabase::assetsTable() . ' a ON a.id = j.asset_id
-             WHERE j.order_id = %d AND a.deleted_at IS NULL
+             WHERE j.order_id = %d AND j.order_item_id = 0 AND a.deleted_at IS NULL
              ORDER BY j.created_at DESC, j.id DESC',
+            absint($order_id)
+        ), ARRAY_A);
+
+        $product_jobs = $wpdb->get_results($wpdb->prepare(
+            'SELECT * FROM ' . PrintDatabase::productTicketsTable() . '
+             WHERE order_id = %d
+             ORDER BY created_at DESC, id DESC',
             absint($order_id)
         ), ARRAY_A);
 
         return [
             'jobs' => array_map([$this, 'jobPayload'], $jobs ?: []),
+            // Product tickets belong to order line items. Keep them in the
+            // response even if their source file is detached later.
+            'product_jobs' => array_map([$this, 'productTicketPayload'], $product_jobs ?: []),
             'order_items' => $this->getOrderItemsPayload($order),
             'template_context' => $this->getPrintTemplateContext($order),
         ];
@@ -314,24 +325,25 @@ class PrintFileModel {
         }
 
         $document_type = sanitize_key($data['document_type'] ?? '');
+        if ($order_item_id) {
+            return new WP_Error('print_file_item_not_allowed', 'File in không được gắn trực tiếp với sản phẩm trong đơn hàng.', ['status' => 400]);
+        }
+        if (in_array($document_type, ['product', 'both'], true)) {
+            return new WP_Error('print_product_ticket_separate_endpoint', 'Phiếu thành phẩm phải được lưu bằng endpoint riêng.', ['status' => 400]);
+        }
+        $assignment = $this->ensureAssetAssignment($order_id, absint($data['asset_id']));
+        if (is_wp_error($assignment)) return $assignment;
         $duplicate = $wpdb->get_var($wpdb->prepare(
-            'SELECT id FROM ' . PrintDatabase::jobsTable() . ' WHERE asset_id = %d AND order_id = %d AND order_item_id = %d LIMIT 1',
+            'SELECT id FROM ' . PrintDatabase::jobsTable() . ' WHERE asset_id = %d AND order_id = %d AND order_item_id = 0 LIMIT 1',
             absint($data['asset_id']),
-            $order_id,
-            $order_item_id
+            $order_id
         ));
         if ($duplicate) {
             // A print ticket is shared by every product job for the same file.
-            if (in_array($document_type, ['print', 'both'], true) && !empty($data['create_document'])) {
+            if ($document_type === 'print' && !empty($data['create_document'])) {
                 $print_specs = $this->extractSpecs($data['specs'] ?? [], 'print');
                 $saved = $this->savePrintTicket($order_id, absint($data['asset_id']), $print_specs, 'ready');
                 if (is_wp_error($saved)) return $saved;
-            }
-            if ($document_type === 'both' && !empty($data['create_document'])) {
-                return $this->updateJob($duplicate, $data);
-            }
-            if ($document_type === 'product' && !empty($data['create_document'])) {
-                return $this->updateJob($duplicate, $data);
             }
             $existing_job = $this->getJob($duplicate);
             if (is_wp_error($existing_job)) return $existing_job;
@@ -341,11 +353,10 @@ class PrintFileModel {
         $normalized_specs = $this->normalizeSpecs($data['specs'] ?? []);
         $product_specs = $this->extractSpecs($normalized_specs, 'product');
         $print_specs = $this->extractSpecs($normalized_specs, 'print');
-        $product_status = in_array($document_type, ['product', 'both'], true) && !empty($data['create_document']) ? 'ready' : 'not_created';
-        if (!$document_type && !empty($data['create_document'])) $product_status = 'ready';
+        $product_status = 'not_created';
         $ticket = $this->ensurePrintTicket($order_id, absint($data['asset_id']));
         if (is_wp_error($ticket)) return $ticket;
-        if (in_array($document_type, ['print', 'both'], true) && !empty($data['create_document'])) {
+        if ($document_type === 'print' && !empty($data['create_document'])) {
             $ticket = $this->savePrintTicket($order_id, absint($data['asset_id']), $print_specs, 'ready');
             if (is_wp_error($ticket)) return $ticket;
         }
@@ -366,8 +377,8 @@ class PrintFileModel {
                 'document_key' => '',
                 'print_document_status' => $ticket['document_status'],
                 'product_document_status' => $product_status,
-                'specs_json' => wp_json_encode($product_specs),
-                'sheet_snapshot_json' => $product_status === 'ready' ? wp_json_encode($product_specs) : '',
+                'specs_json' => wp_json_encode($print_specs),
+                'sheet_snapshot_json' => '',
                 'created_by' => get_current_user_id(),
                 'created_at' => $now,
                 'updated_at' => $now,
@@ -382,6 +393,101 @@ class PrintFileModel {
         return $this->getJob($wpdb->insert_id);
     }
 
+    public function createProductTicket($order_id, array $data) {
+        global $wpdb;
+
+        $order_id = absint($order_id);
+        $order_item_id = absint($data['order_item_id'] ?? 0);
+        $order = wc_get_order($order_id);
+        if (!$order) return new WP_Error('order_not_found', 'Không tìm thấy đơn hàng.', ['status' => 404]);
+        if (!$order_item_id || !$order->get_item($order_item_id)) {
+            return new WP_Error('order_item_not_found', 'Sản phẩm trong đơn hàng không tồn tại.', ['status' => 400]);
+        }
+
+        $table = PrintDatabase::productTicketsTable();
+        $existing_id = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM {$table} WHERE order_id = %d AND order_item_id = %d LIMIT 1",
+            $order_id,
+            $order_item_id
+        ));
+        if ($existing_id) return $this->updateProductTicket($existing_id, $data);
+
+        $specs = $this->extractSpecs($data['specs'] ?? [], 'product');
+        $now = gmdate('Y-m-d H:i:s');
+        $inserted = $wpdb->insert($table, [
+            'order_id' => $order_id,
+            'order_item_id' => $order_item_id,
+            'quantity' => (float) ($data['quantity'] ?? 1),
+            'status' => 'draft',
+            'document_status' => 'ready',
+            'specs_json' => wp_json_encode($specs),
+            'sheet_snapshot_json' => wp_json_encode($specs),
+            'created_by' => get_current_user_id(),
+            'created_at' => $now,
+            'updated_at' => $now,
+        ], ['%d', '%d', '%f', '%s', '%s', '%s', '%s', '%d', '%s', '%s']);
+        if (!$inserted) return new WP_Error('print_product_ticket_save_failed', 'Không thể lưu phiếu thành phẩm.', ['status' => 500]);
+
+        return $this->getProductTicket($wpdb->insert_id);
+    }
+
+    public function updateProductTicket($ticket_id, array $data) {
+        global $wpdb;
+
+        $ticket = $this->getProductTicket($ticket_id);
+        if (is_wp_error($ticket)) return $ticket;
+        $order_item_id = array_key_exists('order_item_id', $data)
+            ? absint($data['order_item_id'])
+            : absint($ticket['order_item_id']);
+        $order = wc_get_order($ticket['order_id']);
+        if (!$order || !$order_item_id || !$order->get_item($order_item_id)) {
+            return new WP_Error('order_item_not_found', 'Sản phẩm trong đơn hàng không tồn tại.', ['status' => 400]);
+        }
+
+        $duplicate = $wpdb->get_var($wpdb->prepare(
+            "SELECT id FROM " . PrintDatabase::productTicketsTable() . " WHERE order_id = %d AND order_item_id = %d AND id <> %d LIMIT 1",
+            absint($ticket['order_id']),
+            $order_item_id,
+            absint($ticket_id)
+        ));
+        if ($duplicate) {
+            return new WP_Error('print_product_ticket_duplicate', 'Sản phẩm này đã có phiếu thành phẩm.', ['status' => 409]);
+        }
+
+        $specs = array_key_exists('specs', $data)
+            ? $this->mergeSpecs($ticket['specs'] ?? [], $data['specs'], 'product')
+            : ($ticket['specs'] ?? []);
+        $updated = $wpdb->update(
+            PrintDatabase::productTicketsTable(),
+            [
+                'order_item_id' => $order_item_id,
+                'quantity' => (float) ($data['quantity'] ?? $ticket['quantity']),
+                'status' => sanitize_key($data['status'] ?? $ticket['status']),
+                'document_status' => 'ready',
+                'specs_json' => wp_json_encode($specs),
+                'sheet_snapshot_json' => wp_json_encode($specs),
+                'updated_at' => gmdate('Y-m-d H:i:s'),
+            ],
+            ['id' => absint($ticket_id)],
+            ['%d', '%f', '%s', '%s', '%s', '%s', '%s'],
+            ['%d']
+        );
+        if ($updated === false) return new WP_Error('print_product_ticket_update_failed', 'Không thể cập nhật phiếu thành phẩm.', ['status' => 500]);
+
+        return $this->getProductTicket($ticket_id);
+    }
+
+    public function deleteProductTicket($ticket_id) {
+        global $wpdb;
+
+        $ticket = $this->getProductTicket($ticket_id);
+        if (is_wp_error($ticket)) return $ticket;
+        if (false === $wpdb->delete(PrintDatabase::productTicketsTable(), ['id' => absint($ticket_id)], ['%d'])) {
+            return new WP_Error('print_product_ticket_delete_failed', 'Không thể gỡ phiếu thành phẩm.', ['status' => 500]);
+        }
+        return true;
+    }
+
     public function updateJob($job_id, array $data) {
         global $wpdb;
 
@@ -393,22 +499,14 @@ class PrintFileModel {
         $order_item_id = $is_print_only
             ? absint($job['order_item_id'])
             : (array_key_exists('order_item_id', $data) ? absint($data['order_item_id']) : absint($job['order_item_id']));
+        if ($document_type !== 'print') {
+            return new WP_Error('print_product_ticket_separate_endpoint', 'Phiếu thành phẩm phải được lưu bằng endpoint riêng.', ['status' => 400]);
+        }
         if ($order_item_id) {
             $order = wc_get_order($job['order_id']);
             if (!$order || !$order->get_item($order_item_id)) {
                 return new WP_Error('order_item_not_found', 'Sản phẩm trong đơn hàng không tồn tại.', ['status' => 400]);
             }
-        }
-
-        $duplicate = $is_print_only ? 0 : $wpdb->get_var($wpdb->prepare(
-            'SELECT id FROM ' . PrintDatabase::jobsTable() . ' WHERE asset_id = %d AND order_id = %d AND order_item_id = %d AND id <> %d LIMIT 1',
-            absint($job['asset_id']),
-            absint($job['order_id']),
-            $order_item_id,
-            absint($job_id)
-        ));
-        if ($duplicate) {
-            return new WP_Error('print_job_duplicate', 'File này đã có phiếu cho sản phẩm được chọn.', ['status' => 409]);
         }
 
         $incoming_specs = array_key_exists('specs', $data)
@@ -420,11 +518,6 @@ class PrintFileModel {
 
         if (!empty($data['create_document']) && $document_type === 'print') {
             $print_status = 'ready';
-        } elseif (!empty($data['create_document']) && $document_type === 'product') {
-            $product_status = 'ready';
-        } elseif (!empty($data['create_document']) && ($document_type === 'both' || $document_type === '')) {
-            $print_status = 'ready';
-            $product_status = 'ready';
         }
 
         if (!empty($data['create_document']) && $document_type === 'print') {
@@ -433,13 +526,8 @@ class PrintFileModel {
             return $this->getJob($job_id);
         }
 
-        if (!empty($data['create_document']) && $document_type === 'both') {
-            $print_ticket = $this->savePrintTicket($job['order_id'], $job['asset_id'], $this->extractSpecs($incoming_specs, 'print'), 'ready');
-            if (is_wp_error($print_ticket)) return $print_ticket;
-        }
-
-        $existing_specs = is_array($job['specs'] ?? null) ? $job['specs'] : [];
-        $specs = $this->mergeSpecs($existing_specs, $incoming_specs, 'product');
+        $existing_specs = [];
+        $specs = $this->mergeSpecs($existing_specs, $incoming_specs, 'print');
         $document_status = $print_status === 'ready' && $product_status === 'ready'
             ? 'ready'
             : ($print_status === 'ready' || $product_status === 'ready' ? 'partial' : 'not_created');
@@ -448,12 +536,12 @@ class PrintFileModel {
         $updated = $wpdb->update(
             PrintDatabase::jobsTable(),
             [
-                'order_item_id' => $order_item_id,
+                'order_item_id' => 0,
                 'quantity' => (float) ($data['quantity'] ?? $job['quantity']),
                 'status' => sanitize_key($data['status'] ?? $job['status']),
                 'document_status' => $document_status,
                 'print_document_status' => $print_ticket['document_status'] ?? $print_status,
-                'product_document_status' => $product_status,
+                'product_document_status' => 'not_created',
                 'specs_json' => wp_json_encode($specs),
                 'sheet_snapshot_json' => $document_status === 'ready' ? wp_json_encode($specs) : $snapshot,
                 'updated_at' => gmdate('Y-m-d H:i:s'),
@@ -476,22 +564,70 @@ class PrintFileModel {
         $job = $this->getJob($job_id);
         if (is_wp_error($job)) return $job;
 
-        if (false === $wpdb->delete(PrintDatabase::jobsTable(), ['id' => absint($job_id)], ['%d'])) {
+        $delete_where = ['id' => absint($job_id)];
+        $delete_format = ['%d'];
+        // A product ticket is unique per order line item. Clean up legacy
+        // duplicate rows together so the same badge cannot reappear after a
+        // user removes the ticket.
+        if (absint($job['order_item_id']) > 0) {
+            $delete_where = [
+                'order_id' => absint($job['order_id']),
+                'order_item_id' => absint($job['order_item_id']),
+            ];
+            $delete_format = ['%d', '%d'];
+        }
+        if (false === $wpdb->delete(PrintDatabase::jobsTable(), $delete_where, $delete_format)) {
             return new WP_Error('print_job_delete_failed', 'Không thể gỡ file khỏi đơn hàng.', ['status' => 500]);
         }
 
-        $remaining = (int) $wpdb->get_var($wpdb->prepare(
-            'SELECT COUNT(*) FROM ' . PrintDatabase::jobsTable() . ' WHERE order_id = %d AND asset_id = %d',
-            absint($job['order_id']),
-            absint($job['asset_id'])
-        ));
-        if (!$remaining) {
-            $wpdb->delete(PrintDatabase::ticketsTable(), [
-                'order_id' => absint($job['order_id']),
-                'asset_id' => absint($job['asset_id']),
-            ], ['%d', '%d']);
+        return true;
+    }
+
+    /**
+     * Detach only the file/order assignment. Product tickets are stored in
+     * their own order-line table, and the print ticket remains shared by the
+     * file wherever that asset is used.
+     */
+    public function detachAssetFromOrder($order_id, $asset_id) {
+        global $wpdb;
+
+        $order_id = absint($order_id);
+        $asset_id = absint($asset_id);
+        if (!$order_id || !$asset_id) {
+            return new WP_Error('invalid_print_file_assignment', 'Đơn hàng hoặc file không hợp lệ.', ['status' => 400]);
         }
 
+        if (!wc_get_order($order_id)) {
+            return new WP_Error('order_not_found', 'Không tìm thấy đơn hàng.', ['status' => 404]);
+        }
+
+        $asset = $this->getAsset($asset_id);
+        if (is_wp_error($asset)) return $asset;
+
+        $jobs_table = PrintDatabase::jobsTable();
+        $order_assets_table = PrintDatabase::orderAssetsTable();
+        $job_count = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$jobs_table} WHERE order_id = %d AND asset_id = %d",
+            $order_id,
+            $asset_id
+        ));
+        $assignment_exists = (int) $wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM {$order_assets_table} WHERE order_id = %d AND asset_id = %d",
+            $order_id,
+            $asset_id
+        ));
+        if (!$job_count && !$assignment_exists) {
+            return new WP_Error('print_file_not_assigned', 'File này không được gắn vào đơn hàng.', ['status' => 404]);
+        }
+
+        $wpdb->query('START TRANSACTION');
+        $assignment_deleted = $wpdb->delete($order_assets_table, ['order_id' => $order_id, 'asset_id' => $asset_id], ['%d', '%d']);
+        if ($assignment_deleted === false) {
+            $wpdb->query('ROLLBACK');
+            return new WP_Error('print_file_detach_failed', 'Không thể gỡ file khỏi đơn hàng.', ['status' => 500]);
+        }
+
+        $wpdb->query('COMMIT');
         return true;
     }
 
@@ -502,9 +638,8 @@ class PrintFileModel {
         if (is_wp_error($job)) return $job;
 
         $deleted = $wpdb->delete(PrintDatabase::ticketsTable(), [
-            'order_id' => absint($job['order_id']),
             'asset_id' => absint($job['asset_id']),
-        ], ['%d', '%d']);
+        ], ['%d']);
         if ($deleted === false) {
             return new WP_Error('print_ticket_delete_failed', 'Không thể gỡ phiếu in.', ['status' => 500]);
         }
@@ -517,8 +652,7 @@ class PrintFileModel {
 
         $table = PrintDatabase::ticketsTable();
         $row = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM {$table} WHERE order_id = %d AND asset_id = %d LIMIT 1",
-            absint($order_id),
+            "SELECT * FROM {$table} WHERE asset_id = %d LIMIT 1",
             absint($asset_id)
         ), ARRAY_A);
         if ($row) return $this->printTicketPayload($row);
@@ -536,6 +670,23 @@ class PrintFileModel {
         if (!$inserted) return new WP_Error('print_ticket_save_failed', 'Không thể tạo phiếu in.', ['status' => 500]);
 
         return $this->ensurePrintTicket($order_id, $asset_id);
+    }
+
+    private function ensureAssetAssignment($order_id, $asset_id) {
+        global $wpdb;
+
+        $inserted = $wpdb->query($wpdb->prepare(
+            'INSERT IGNORE INTO ' . PrintDatabase::orderAssetsTable() . ' (order_id, asset_id, created_by, created_at) VALUES (%d, %d, %d, %s)',
+            absint($order_id),
+            absint($asset_id),
+            get_current_user_id(),
+            gmdate('Y-m-d H:i:s')
+        ));
+        if ($inserted === false) {
+            return new WP_Error('print_file_assignment_failed', 'Không thể gắn file vào đơn hàng.', ['status' => 500]);
+        }
+
+        return true;
     }
 
     private function savePrintTicket($order_id, $asset_id, array $specs, $status = 'ready') {
@@ -591,7 +742,7 @@ class PrintFileModel {
         if (is_wp_error($asset)) return $asset;
 
         $usage = (int) $wpdb->get_var($wpdb->prepare(
-            'SELECT COUNT(*) FROM ' . PrintDatabase::jobsTable() . ' WHERE asset_id = %d',
+            'SELECT COUNT(*) FROM ' . PrintDatabase::orderAssetsTable() . ' WHERE asset_id = %d',
             absint($asset_id)
         ));
         if ($usage > 0) {
@@ -626,7 +777,7 @@ class PrintFileModel {
             'SELECT j.*, p.id AS print_ticket_id, p.document_status AS print_ticket_status, p.specs_json AS print_ticket_specs_json,
                     a.original_name, a.storage_key, a.thumbnail_key, a.extension, a.mime_type, a.size_bytes, a.page_count, a.width, a.height, a.thumbnail_status, a.thumbnail_error
              FROM ' . PrintDatabase::jobsTable() . ' j
-             LEFT JOIN ' . PrintDatabase::ticketsTable() . ' p ON p.order_id = j.order_id AND p.asset_id = j.asset_id
+             LEFT JOIN ' . PrintDatabase::ticketsTable() . ' p ON p.asset_id = j.asset_id
              INNER JOIN ' . PrintDatabase::assetsTable() . ' a ON a.id = j.asset_id
              WHERE j.id = %d AND a.deleted_at IS NULL LIMIT 1',
             absint($job_id)
@@ -634,6 +785,17 @@ class PrintFileModel {
 
         if (!$row) return new WP_Error('print_job_not_found', 'Không tìm thấy phiếu in.', ['status' => 404]);
         return $this->jobPayload($row);
+    }
+
+    public function getProductTicket($ticket_id) {
+        global $wpdb;
+
+        $row = $wpdb->get_row($wpdb->prepare(
+            'SELECT * FROM ' . PrintDatabase::productTicketsTable() . ' WHERE id = %d LIMIT 1',
+            absint($ticket_id)
+        ), ARRAY_A);
+        if (!$row) return new WP_Error('print_product_ticket_not_found', 'Không tìm thấy phiếu thành phẩm.', ['status' => 404]);
+        return $this->productTicketPayload($row);
     }
 
     public function getAssetFilePath($asset_id, $kind = 'original') {
@@ -676,9 +838,11 @@ class PrintFileModel {
         $specs = json_decode((string) ($row['specs_json'] ?? ''), true);
         $print_specs = json_decode((string) ($row['print_ticket_specs_json'] ?? ''), true);
         $snapshot = json_decode((string) ($row['sheet_snapshot_json'] ?? ''), true);
+        // The print ticket is global to the asset. Fall back to the job column
+        // for older rows created before print_tickets was introduced.
         $print_status = !empty($row['print_ticket_id'])
             ? (string) $row['print_ticket_status']
-            : 'not_created';
+            : (string) ($row['print_document_status'] ?? 'not_created');
         $product_status = $row['product_document_status'] ?? (($row['document_status'] ?? '') === 'ready' ? 'ready' : 'not_created');
         $document_status = $print_status === 'ready' && $product_status === 'ready'
             ? 'ready'
@@ -719,6 +883,27 @@ class PrintFileModel {
             'created_at' => $row['created_at'] ?? '',
         ]);
 
+        return $payload;
+    }
+
+    private function productTicketPayload(array $row) {
+        $specs = json_decode((string) ($row['specs_json'] ?? ''), true);
+        $snapshot = json_decode((string) ($row['sheet_snapshot_json'] ?? ''), true);
+        $payload = [
+            'id' => absint($row['id']),
+            'order_id' => absint($row['order_id']),
+            'order_item_id' => absint($row['order_item_id']),
+            'quantity' => (float) $row['quantity'],
+            'status' => $row['status'],
+            'document_status' => (string) $row['document_status'],
+            'print_document_status' => 'not_created',
+            'product_document_status' => (string) $row['document_status'],
+            'specs' => is_array($specs) ? $specs : [],
+            'print_specs' => [],
+            'sheet_snapshot' => is_array($snapshot) ? $snapshot : [],
+            'product_dimensions' => $this->getOrderItemDimensions($row['order_id'], $row['order_item_id']),
+            'asset' => [],
+        ];
         return $payload;
     }
 

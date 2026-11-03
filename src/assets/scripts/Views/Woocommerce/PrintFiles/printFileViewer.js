@@ -9,8 +9,13 @@ export default class PrintFileViewer extends Viewer {
       super();
       this.uploadFiles = null;
       this.activeIndex = 0;
+      this.pendingActiveAssetId = null;
+      this.activeAssetStorageKey = '';
       this.assetGroups = [];
       this.selectedJobByAsset = new Map();
+      this.selectedProductJobId = null;
+      this.selectedProductItemId = null;
+      this.productActiveIndex = 0;
       this.newProductItemByAsset = new Map();
       this.editingProductByAsset = new Map();
       this.previousProductByAsset = new Map();
@@ -104,13 +109,15 @@ export default class PrintFileViewer extends Viewer {
    renderJobs(jobs, callbacks = {}) {
       this.currentJobs = jobs || [];
       this.currentCallbacks = callbacks;
-      const activeAssetId = this.assetGroups[this.activeIndex]?.asset?.id;
+      const storedAssetId = this.pendingActiveAssetId || this._getStoredActiveAsset();
+      const activeAssetId = storedAssetId || this.assetGroups[this.activeIndex]?.asset?.id;
       this.assetGroups = this._groupJobs(jobs);
       this.grid.innerHTML = '';
       if (!this.assetGroups.length) {
          this.activeIndex = 0;
          this.grid.classList.add('is-empty');
          this.grid.append(this.uploadPanel);
+         this._renderProductPanel(callbacks);
          return;
       }
       this.grid.classList.remove('is-empty');
@@ -118,12 +125,48 @@ export default class PrintFileViewer extends Viewer {
       this.activeIndex = restoredIndex >= 0
          ? restoredIndex
          : Math.min(this.activeIndex, this.assetGroups.length - 1);
+      if (restoredIndex >= 0) {
+         this.pendingActiveAssetId = null;
+         this._storeActiveAsset(this.assetGroups[restoredIndex].asset.id);
+      } else if (storedAssetId) {
+         this.pendingActiveAssetId = null;
+         this._storeActiveAsset('');
+      }
       const layout = TagBuilder.create('div').setAttributes({ className: 'tsp-print-files-layout' }).build();
       this.gallery = TagBuilder.create('div').setAttributes({ className: 'tsp-print-files-gallery' }).build();
       this.assetPicker = this.uploadPanel;
       layout.append(this.gallery, this.assetPicker);
       this.grid.append(layout);
       this._renderActiveJob(jobs, callbacks);
+      this._renderProductPanel(callbacks);
+   }
+
+   setActiveAsset(assetId) {
+      this.pendingActiveAssetId = assetId ? String(assetId) : null;
+      this._storeActiveAsset(assetId);
+   }
+
+   setActiveAssetStorageKey(key) {
+      this.activeAssetStorageKey = key ? String(key) : '';
+   }
+
+   _getStoredActiveAsset() {
+      if (!this.activeAssetStorageKey) return '';
+      try {
+         return window.localStorage.getItem(this.activeAssetStorageKey) || '';
+      } catch (error) {
+         return '';
+      }
+   }
+
+   _storeActiveAsset(assetId) {
+      if (!this.activeAssetStorageKey) return;
+      try {
+         if (assetId) window.localStorage.setItem(this.activeAssetStorageKey, String(assetId));
+         else window.localStorage.removeItem(this.activeAssetStorageKey);
+      } catch (error) {
+         // Local storage may be unavailable in restricted browser contexts.
+      }
    }
 
    _groupJobs(jobs) {
@@ -152,6 +195,33 @@ export default class PrintFileViewer extends Viewer {
       return job;
    }
 
+   _selectedProductJob(productJobs = []) {
+      productJobs = this._uniqueProductJobs(productJobs);
+      if (this.selectedProductJobId === 'none') return null;
+      if (this.selectedProductJobId === 'new') return null;
+      if (this.selectedProductJobId) {
+         const selected = productJobs.find((job) => String(job.id) === String(this.selectedProductJobId));
+         if (selected) return selected;
+      }
+      const selected = productJobs.find((job) => this._hasTicket(job, 'product')) || productJobs[0];
+      if (selected) this.selectedProductJobId = selected.id;
+      return selected || null;
+   }
+
+   _uniqueProductJobs(productJobs = []) {
+      const unique = new Map();
+      (productJobs || []).forEach((productJob) => {
+         const itemId = String(productJob?.order_item_id || '0');
+         if (itemId === '0') return;
+         const current = unique.get(itemId);
+         // Prefer the saved ticket, then the newest row returned by the API.
+         if (!current || (!this._hasTicket(current, 'product') && this._hasTicket(productJob, 'product'))) {
+            unique.set(itemId, productJob);
+         }
+      });
+      return [...unique.values()];
+   }
+
    _printJob(group) {
       return group.jobs.find((job) => job?.print_ticket?.id || this._hasTicket(job, 'print'))
          || group.jobs[0]
@@ -159,7 +229,10 @@ export default class PrintFileViewer extends Viewer {
    }
 
    _hasTicket(job, type) {
-      if (type === 'print') return job?.print_document_status === 'ready';
+      if (type === 'print') {
+         return job?.print_document_status === 'ready'
+            || job?.print_ticket?.document_status === 'ready';
+      }
       return job?.product_document_status === 'ready';
    }
 
@@ -169,7 +242,7 @@ export default class PrintFileViewer extends Viewer {
 
    _canCreateProductTicket(callbacks = {}) {
       const orderItems = callbacks.orderItems || [];
-      if (!orderItems.length) return true;
+      if (!orderItems.length) return false;
       const productJobs = callbacks.allProductJobs || callbacks.productJobs || [];
       return orderItems.some((item) => !productJobs.some((productJob) => (
          String(productJob.order_item_id) === String(item.id)
@@ -208,11 +281,13 @@ export default class PrintFileViewer extends Viewer {
    _renderActiveJob(jobs, callbacks) {
       const group = this.assetGroups[this.activeIndex];
       if (!group) return;
-      const selectedProductJob = this._selectedJob(group);
-      const printJob = this._printJob(group) || selectedProductJob;
+      const allProductJobs = this._uniqueProductJobs(callbacks.allProductJobs || jobs.filter((item) => Number(item.order_item_id) > 0));
+      const selectedProductJob = this._selectedProductJob(allProductJobs);
+      const printJob = this._printJob(group);
       const asset = group.asset || {};
-      const draftItemId = this.newProductItemByAsset.get(String(asset.id)) || 0;
-      const job = selectedProductJob || this._newProductJob(printJob, draftItemId);
+      const draftItemId = this.newProductItemByAsset.get('order') || 0;
+      const productJob = selectedProductJob || this._newProductJob({}, draftItemId);
+      const job = printJob || productJob;
       const previousCard = this.gallery?.querySelector('.tsp-print-file-card');
       const sameCard = previousCard && String(previousCard.dataset.assetId) === String(asset.id);
       const card = sameCard
@@ -243,14 +318,24 @@ export default class PrintFileViewer extends Viewer {
          TagBuilder.create('div').setAttributes({ className: 'tsp-print-file-meta' }).text(`${String(asset.extension || '').toUpperCase()} · ${asset.size || ''}`).build(),
          TagBuilder.create('div').setAttributes({ className: 'tsp-print-file-meta' }).text(`${this._pointsToCm(asset.width) || 0} × ${this._pointsToCm(asset.height) || 0} cm · SL ${job.quantity || 1}`).build(),
       );
+      const detach = this._button('Gỡ file khỏi đơn hàng', 'button-link-delete tsp-print-file-remove');
+      detach.setAttribute('title', 'Chỉ gỡ file khỏi đơn hàng, không xóa khỏi thư viện');
+      detach.onclick = (event) => {
+         event.stopPropagation();
+         callbacks.onRemoveAsset?.(asset);
+      };
+      body.append(detach);
 
       const form = this._createJobForm(asset, callbacks.orderItems || [], job, {
          ...callbacks,
          assetId: asset.id,
+         productContextKey: 'order',
          printJob,
-         productJobs: group.jobs,
-         allProductJobs: this.currentJobs.filter((productJob) => this._hasTicket(productJob, 'product')),
+         productJob,
+         productJobs: allProductJobs,
+         allProductJobs,
       });
+      form.querySelector('.tsp-print-job-section-product')?.remove();
       body.append(form);
 
       card.append(previewElement, body);
@@ -288,13 +373,101 @@ export default class PrintFileViewer extends Viewer {
       }
    }
 
+   _renderProductPanel(callbacks = {}) {
+      this.grid.querySelector('.tsp-print-product-panel')?.remove();
+      const items = callbacks.orderItems || [];
+      if (!items.length) return;
+      const productJobs = this._uniqueProductJobs(callbacks.allProductJobs || []);
+      const selectedTicket = productJobs.find((job) => String(job.id) === String(this.selectedProductJobId));
+      if (selectedTicket?.order_item_id) this.selectedProductItemId = selectedTicket.order_item_id;
+      let activeIndex = items.findIndex((item) => String(item.id) === String(this.selectedProductItemId));
+      if (activeIndex < 0) activeIndex = Math.min(this.productActiveIndex, items.length - 1);
+      this.productActiveIndex = Math.max(0, activeIndex);
+      const activeItem = items[this.productActiveIndex];
+      this.selectedProductItemId = activeItem.id;
+      const isNewProductTicket = this.selectedProductJobId === 'new';
+      const draftItemId = Number(this.newProductItemByAsset.get('order') || activeItem.id);
+      const productJob = isNewProductTicket
+         ? this._newProductJob({ order_id: callbacks.orderId || 0 }, draftItemId)
+         : (productJobs.find((job) => String(job.order_item_id) === String(activeItem.id))
+            || this._newProductJob({ order_id: callbacks.orderId || 0 }, activeItem.id));
+      const form = this._createJobForm({}, callbacks.orderItems || [], productJob, {
+         ...callbacks,
+         assetId: 0,
+         productContextKey: 'order',
+         productOnly: true,
+         productJob,
+         productJobs,
+         allProductJobs: productJobs,
+      });
+      const productSection = form.querySelector('.tsp-print-job-section-product');
+      if (!productSection) return;
+      const thumbnail = this._productThumbnail(activeItem, productJob, items.length);
+      const info = TagBuilder.create('div')
+         .setAttributes({ className: 'tsp-print-product-info' })
+         .append([productSection])
+         .build();
+      const panel = TagBuilder.create('section')
+         .setAttributes({ className: 'tsp-print-product-panel' })
+         .append([
+            TagBuilder.create('h3').text('Phiếu thành phẩm của đơn hàng').build(),
+            TagBuilder.create('div').setAttributes({ className: 'tsp-print-product-layout' }).append([thumbnail, info]).build(),
+         ])
+         .build();
+      this.grid.append(panel);
+   }
+
+   _productThumbnail(item, productJob, itemCount) {
+      const hasTicket = this._hasTicket(productJob, 'product');
+      const preview = TagBuilder.create('div').setAttributes({ className: 'tsp-print-product-thumbnail' }).build();
+      const imageUrl = item?.image_url || '';
+      if (imageUrl) {
+         preview.append(TagBuilder.create('img').setAttributes({ src: imageUrl, alt: item.name || 'Sản phẩm', loading: 'lazy' }).build());
+      } else {
+         preview.append(TagBuilder.create('div').setAttributes({ className: 'tsp-print-product-name-fallback' }).text(item?.name || 'Sản phẩm').build());
+      }
+      preview.append(
+         TagBuilder.create('span').setAttributes({ className: `tsp-print-product-item-status ${hasTicket ? 'is-ready' : ''}` }).text(hasTicket ? 'Đã tạo phiếu' : 'Chưa tạo phiếu').build(),
+      );
+      if (itemCount > 1) {
+         const previous = this._button('‹', 'tsp-print-product-nav tsp-print-product-nav-prev');
+         const next = this._button('›', 'tsp-print-product-nav tsp-print-product-nav-next');
+         previous.setAttribute('aria-label', 'Sản phẩm trước');
+         next.setAttribute('aria-label', 'Sản phẩm tiếp theo');
+         previous.onclick = (event) => {
+            event.stopPropagation();
+            this.productActiveIndex = (this.productActiveIndex - 1 + itemCount) % itemCount;
+            this.selectedProductItemId = this.currentCallbacks.orderItems[this.productActiveIndex].id;
+            this._stopProductEditing();
+            this._renderProductPanel(this.currentCallbacks);
+         };
+         next.onclick = (event) => {
+            event.stopPropagation();
+            this.productActiveIndex = (this.productActiveIndex + 1) % itemCount;
+            this.selectedProductItemId = this.currentCallbacks.orderItems[this.productActiveIndex].id;
+            this._stopProductEditing();
+            this._renderProductPanel(this.currentCallbacks);
+         };
+         preview.append(previous, next);
+         preview.append(TagBuilder.create('small').setAttributes({ className: 'tsp-print-product-counter' }).text(`${this.productActiveIndex + 1} / ${itemCount}`).build());
+      }
+      return preview;
+   }
+
+   _stopProductEditing() {
+      this.selectedProductJobId = null;
+      this.newProductItemByAsset.delete('order');
+      this.editingProductByAsset.delete('order');
+      this.previousProductByAsset.delete('order');
+   }
+
    _newProductJob(baseJob, orderItemId = 0) {
       return {
          id: 0,
          order_id: baseJob?.order_id || 0,
          order_item_id: Number(orderItemId || 0),
-         asset_id: baseJob?.asset_id || 0,
-         asset: baseJob?.asset || {},
+         asset_id: 0,
+         asset: {},
          quantity: 1,
          status: 'draft',
          document_status: 'not_created',
@@ -307,7 +480,8 @@ export default class PrintFileViewer extends Viewer {
    }
 
    _createJobForm(asset, items, job, callbacks = {}) {
-      const specs = job?.specs || {};
+      const productJob = callbacks.productJob || job;
+      const specs = productJob?.specs || {};
       const form = TagBuilder.create('form').setAttributes({ className: 'tsp-print-job-form frame__content' }).build();
       this._appendPrintFields(form, asset, specs, job, items, callbacks);
       form.addEventListener('submit', (event) => event.preventDefault());
@@ -318,9 +492,10 @@ export default class PrintFileViewer extends Viewer {
    _appendPrintFields(form, asset, specs, job = {}, items = [], callbacks = {}) {
       const assetWidthCm = this._pointsToCm(asset.width);
       const assetHeightCm = this._pointsToCm(asset.height);
-      const selectedItem = items.find((item) => String(item.id) === String(job?.order_item_id || ''));
-      const productWidthCm = this._dimensionValue(job?.product_dimensions?.width_cm, selectedItem?.width_cm || assetWidthCm);
-      const productHeightCm = this._dimensionValue(job?.product_dimensions?.height_cm, selectedItem?.height_cm || assetHeightCm);
+      const productJob = callbacks.productJob || job;
+      const selectedItem = items.find((item) => String(item.id) === String(productJob?.order_item_id || ''));
+      const productWidthCm = this._dimensionValue(productJob?.product_dimensions?.width_cm, selectedItem?.width_cm || assetWidthCm);
+      const productHeightCm = this._dimensionValue(productJob?.product_dimensions?.height_cm, selectedItem?.height_cm || assetHeightCm);
       const printJob = callbacks.printJob || job;
       const printSpecs = { ...(printJob?.specs || {}), ...(printJob?.print_specs || {}) };
       const printSection = TagBuilder.create('section').setAttributes({ className: 'tsp-print-job-section' }).build();
@@ -352,49 +527,13 @@ export default class PrintFileViewer extends Viewer {
       // A saved print ticket is read-only until the user explicitly edits it.
       this._setSectionFieldsEnabled(printSection, false);
 
-      const productSection = TagBuilder.create('section').setAttributes({ className: 'tsp-print-job-section' }).build();
+      const productSection = TagBuilder.create('section').setAttributes({ className: 'tsp-print-job-section tsp-print-job-section-product' }).build();
       productSection.append(TagBuilder.create('h4').text('Thành phẩm').build());
-      const itemSelect = TagBuilder.create('select').setAttributes({ name: 'order_item_id', className: 'form__field form__item regular-text wd-100 setting__item tsp-print-input' }).build();
-      itemSelect.append(TagBuilder.create('option').setAttributes({ value: '0' }).text('Toàn bộ đơn hàng').build());
-      const productJobs = callbacks.productJobs || [];
-      const allProductJobs = callbacks.allProductJobs || productJobs;
-      items.forEach((item) => {
-         const alreadyHasTicket = allProductJobs.some((productJob) => (
-            String(productJob.order_item_id) === String(item.id)
-            && this._hasTicket(productJob, 'product')
-         ));
-         const option = TagBuilder.create('option').setAttributes({
-            value: item.id,
-            'data-width-cm': item.width_cm || 0,
-            'data-height-cm': item.height_cm || 0,
-         }).text(`#${item.id} · ${item.name}`).build();
-         if (alreadyHasTicket) {
-            option.disabled = true;
-            option.title = 'Sản phẩm này đã có phiếu thành phẩm trong đơn hàng';
-         }
-         itemSelect.append(option);
-      });
-      itemSelect.value = String(job?.order_item_id || 0);
-      itemSelect.addEventListener('change', () => {
-         const key = String(asset.id);
-         const selected = (callbacks.productJobs || []).find((productJob) => String(productJob.order_item_id) === itemSelect.value);
-         if (selected) {
-            this.selectedJobByAsset.set(key, selected.id);
-            this.newProductItemByAsset.delete(key);
-         } else {
-            const currentId = this.selectedJobByAsset.get(key);
-            if (currentId && currentId !== 'new') this.previousProductByAsset.set(key, currentId);
-            this.selectedJobByAsset.set(key, 'new');
-            this.newProductItemByAsset.set(key, Number(itemSelect.value || 0));
-         }
-         this.editingProductByAsset.set(key, true);
-         this._renderActiveJob(this.currentJobs, this.currentCallbacks);
-      });
-      const editingProduct = this.editingProductByAsset.get(String(asset.id)) === true;
+      const editingProduct = this.editingProductByAsset.get(callbacks.productContextKey || 'order') === true;
       productSection.append(
-         this._documentStatusRow(job, 'product', callbacks, form, productSection, editingProduct),
+         this._documentStatusRow(productJob, 'product', callbacks, form, productSection, editingProduct),
          this._supplierField(callbacks.suppliers || [], specs.supplier || ''),
-         this._field('Sản phẩm trong đơn hàng', itemSelect),
+         this._input('order_item_id', productJob?.order_item_id || 0, 'hidden'),
          TagBuilder.create('div').setAttributes({ className: 'tsp-print-job-two-col' }).append([
             this._field('Kích thước rộng (cm)', this._input('product_width', this._dimensionValue(specs.product_width, productWidthCm), 'number', '0.01')),
             this._field('Kích thước cao (cm)', this._input('product_height', this._dimensionValue(specs.product_height, productHeightCm), 'number', '0.01')),
@@ -404,7 +543,7 @@ export default class PrintFileViewer extends Viewer {
             this._field('Số mặt', this._input('product_sides', specs.product_sides || '', 'text')),
          ]).build(),
          this._field('Thành phẩm', this._termSelect('product_form', callbacks.productForms || [], specs.product_form || '', 'Chọn thành phẩm')),
-         this._field('Số lượng', this._input('product_quantity', specs.product_quantity ?? job.quantity ?? 1, 'number', '0.01')),
+         this._field('Số lượng', this._input('product_quantity', specs.product_quantity ?? productJob.quantity ?? 1, 'number', '0.01')),
          this._field('Đóng gói', this._input('packaging', specs.packaging || '', 'text')),
          this._field('Ghi chú', this._textarea('product_note', specs.product_note || '')),
       );
@@ -415,42 +554,32 @@ export default class PrintFileViewer extends Viewer {
    _documentStatusRow(job, type, callbacks, form, section = null, initiallyEditing = false) {
       const ready = this._hasTicket(job, type);
       const row = TagBuilder.create('div').setAttributes({ className: `tsp-print-document-status-row tsp-print-document-status-${type}` }).build();
+      const productTickets = type === 'product'
+         ? this._uniqueProductJobs(callbacks.allProductJobs || callbacks.productJobs || [])
+            .filter((productJob) => this._hasTicket(productJob, 'product'))
+         : [];
       if (type === 'product') {
-         const tickets = (callbacks.productJobs || []).filter((productJob) => this._hasTicket(productJob, 'product'));
-         if (tickets.length) {
-            const badges = TagBuilder.create('div').setAttributes({ className: 'tsp-print-product-badges' }).build();
-            tickets.forEach((productJob) => {
-               const item = (callbacks.orderItems || []).find((orderItem) => String(orderItem.id) === String(productJob.order_item_id));
-               const label = item?.name || (productJob.order_item_id ? `Sản phẩm #${productJob.order_item_id}` : 'Toàn bộ đơn hàng');
-               const badge = this._button(label, 'tsp-print-product-badge');
-               if (String(productJob.id) === String(job?.id)) badge.classList.add('is-selected');
-               badge.setAttribute('aria-pressed', String(productJob.id) === String(job?.id) ? 'true' : 'false');
-               badge.onclick = (event) => {
-                  event.stopPropagation();
-                  this.selectedJobByAsset.set(String(callbacks.assetId), productJob.id);
-                  this.editingProductByAsset.delete(String(callbacks.assetId));
-                  this._renderActiveJob(this.currentJobs, this.currentCallbacks);
-               };
-               badges.append(badge);
-            });
-            row.append(badges);
-         } else {
-            row.append(TagBuilder.create('span').setAttributes({ className: 'tsp-print-file-status' }).text('Chưa tạo phiếu').build());
-         }
       } else {
          row.append(TagBuilder.create('span').setAttributes({ className: `tsp-print-file-status ${ready ? 'is-ready' : ''}` }).text(ready ? 'Đã có phiếu' : 'Chưa tạo phiếu').build());
       }
 
-      if (type === 'product' && ready && !initiallyEditing && this._canCreateProductTicket(callbacks)) {
+      if (type === 'product' && ready && productTickets.length && !initiallyEditing && this._canCreateProductTicket(callbacks)) {
          const create = this._button('Tạo phiếu', 'button tsp-print-product-new tsp-print-edit-secondary');
          create.onclick = (event) => {
             event.stopPropagation();
-            const key = String(callbacks.assetId);
-            if (job?.id) this.previousProductByAsset.set(key, job.id);
-            this.selectedJobByAsset.set(key, 'new');
-            this.newProductItemByAsset.set(key, 0);
+            const key = callbacks.productContextKey || 'order';
+            const nextItem = (callbacks.orderItems || []).find((item) => !productTickets.some((ticket) => (
+               String(ticket.order_item_id) === String(item.id)
+            )));
+            if (!nextItem) return;
+            const nextIndex = (callbacks.orderItems || []).findIndex((item) => String(item.id) === String(nextItem.id));
+            this.previousProductByAsset.set(key, job?.id || null);
+            this.selectedProductItemId = nextItem.id;
+            this.productActiveIndex = Math.max(0, nextIndex);
+            this.selectedProductJobId = 'new';
+            this.newProductItemByAsset.set(key, Number(nextItem.id));
             this.editingProductByAsset.set(key, true);
-            this._renderActiveJob(this.currentJobs, this.currentCallbacks);
+            this._renderProductPanel(this.currentCallbacks);
          };
          row.append(create);
       }
@@ -463,24 +592,24 @@ export default class PrintFileViewer extends Viewer {
          cancel = this._button('Hủy', 'button tsp-print-document-cancel');
          cancel.onclick = (event) => {
             event.stopPropagation();
-            const key = String(callbacks.assetId || job?.asset_id || '');
+            const key = callbacks.productContextKey || 'order';
             if (type === 'product') {
                const previousId = this.previousProductByAsset.get(key);
-               if (!job?.id && previousId) this.selectedJobByAsset.set(key, previousId);
-               else if (!job?.id) this.selectedJobByAsset.delete(key);
+               if (!job?.id && previousId) this.selectedProductJobId = previousId;
+               else if (!job?.id) this.selectedProductJobId = 'new';
                this.newProductItemByAsset.delete(key);
                this.editingProductByAsset.delete(key);
                this.previousProductByAsset.delete(key);
             }
-            this._renderActiveJob(this.currentJobs, this.currentCallbacks);
+            this._renderProductPanel(this.currentCallbacks);
          };
       };
       if (editing) addCancelButton();
-      action.onclick = () => {
+      action.onclick = async () => {
          if (!editing) {
             editing = true;
-            if (type === 'product' && callbacks.assetId) {
-               this.editingProductByAsset.set(String(callbacks.assetId), true);
+            if (type === 'product') {
+               this.editingProductByAsset.set(callbacks.productContextKey || 'order', true);
             }
             this._setSectionFieldsEnabled(section, true);
             action.textContent = 'Lưu phiếu';
@@ -493,13 +622,27 @@ export default class PrintFileViewer extends Viewer {
          // names (for example `supplier`), so reading the whole form can make
          // one selector overwrite the other.
          const data = this._collectSectionFields(section || form);
-         callbacks.onSave?.(job, {
+         if (type === 'product' && !Number(data.order_item_id || 0)) {
+            this.showNotice('Vui lòng chọn sản phẩm trong đơn hàng trước khi lưu phiếu thành phẩm.', 'warning');
+            return;
+         }
+         action.disabled = true;
+         if (cancel) cancel.disabled = true;
+         const saved = await callbacks.onSave?.(job, {
             order_item_id: Number(data.order_item_id || 0),
             quantity: Number(data.product_quantity || job?.quantity || 1),
             create_document: true,
             document_type: type,
             specs: this._collectPrintSpecs(data),
          });
+         if (saved === false) {
+            action.disabled = false;
+            if (cancel) cancel.disabled = false;
+            return;
+         }
+
+         // The controller reloads and renders the complete post-save state
+         // from the server response. Do not leave a partial button state here.
       };
       row.append(action);
       if (cancel && !cancel.parentNode) row.append(cancel);
@@ -510,9 +653,11 @@ export default class PrintFileViewer extends Viewer {
          print.onclick = () => callbacks.onSheet?.(job, type);
          row.append(print);
       }
-      const remove = this._button('Gỡ', 'button-link-delete tsp-print-edit-secondary');
-      remove.onclick = () => callbacks.onRemove?.(job, type);
-      if (ready && !editing) row.append(remove);
+      if (ready && job?.id && !editing) {
+         const remove = this._button('Gỡ', 'button-link-delete tsp-print-edit-secondary');
+         remove.onclick = () => callbacks.onRemove?.(job, type);
+         row.append(remove);
+      }
       return row;
    }
 

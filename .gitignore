@@ -43,3 +43,5 @@ Thumbs.db
 
 # SSL Keys & Private Keys (Security Risk)
 *.pem
+production
+.forge

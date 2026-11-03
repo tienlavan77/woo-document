@@ -3,8 +3,8 @@
  * Plugin Name: Documents for commercial
  * Plugin URI:  https://yourwebsite.com/
  * Description: Create quotation, delivery, VAT invoice ....
- * Version:     1.0.0
- * Author:      La Vn Tin
+ * Version:     1.1.0
+ * Author:      Tien Lavan
  * Author URI:  https://yourwebsite.com/
  * License:     GPL2
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html

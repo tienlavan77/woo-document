@@ -58,8 +58,26 @@ export default class PrintFileModel extends Model {
       });
    }
 
+   async createProductTicket(orderId, data) {
+      return this._httpPost(`${this.api}/orders/${encodeURIComponent(orderId)}/product-tickets`, data, {
+         Authorization: `Bearer ${this._token}`,
+      });
+   }
+
+   async detachAsset(orderId, assetId) {
+      return this._httpDelete(`${this.api}/orders/${encodeURIComponent(orderId)}/print-files/${encodeURIComponent(assetId)}`, {}, {
+         Authorization: `Bearer ${this._token}`,
+      });
+   }
+
    async updateJob(jobId, data) {
       return this._httpPut(`${this.api}/print-jobs/${encodeURIComponent(jobId)}`, data, {
+         Authorization: `Bearer ${this._token}`,
+      });
+   }
+
+   async updateProductTicket(ticketId, data) {
+      return this._httpPut(`${this.api}/product-tickets/${encodeURIComponent(ticketId)}`, data, {
          Authorization: `Bearer ${this._token}`,
       });
    }
@@ -72,6 +90,12 @@ export default class PrintFileModel extends Model {
 
    async deleteJob(jobId) {
       return this._httpDelete(`${this.api}/print-jobs/${encodeURIComponent(jobId)}`, {}, {
+         Authorization: `Bearer ${this._token}`,
+      });
+   }
+
+   async deleteProductTicket(ticketId) {
+      return this._httpDelete(`${this.api}/product-tickets/${encodeURIComponent(ticketId)}`, {}, {
          Authorization: `Bearer ${this._token}`,
       });
    }

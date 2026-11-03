@@ -147,6 +147,26 @@
 		color: var(--color-text-secondary);
 	}
 
+	.tsp-print-file-remove {
+		display: inline-flex;
+		align-items: center;
+		min-height: 26px;
+		margin: 2px 0 10px;
+		padding: 3px 8px;
+		border: 1px solid transparent;
+		border-radius: 4px;
+		font-size: 11px;
+		line-height: 16px;
+		cursor: pointer;
+
+		&:hover,
+		&:focus-visible {
+			border-color: var(--color-error);
+			background: var(--color-error-soft);
+			outline: none;
+		}
+	}
+
 	.tsp-print-file-status {
 		display: inline-block;
 		margin: 4px 0 10px;
@@ -177,51 +197,6 @@
 			line-height: 16px;
 		}
 
-		.tsp-print-product-badges {
-			display: flex;
-			align-items: center;
-			flex: 1 1 auto;
-			min-width: 0;
-			gap: 5px;
-			flex-wrap: wrap;
-		}
-
-		.tsp-print-product-badge {
-			flex: 0 1 auto;
-			max-width: 100%;
-			height: 24px;
-			min-height: 24px;
-			margin: 0;
-			padding: 3px 8px;
-			border: 1px solid var(--color-border-strong);
-			border-radius: 12px;
-			background: var(--color-bg);
-			color: var(--color-text-secondary);
-			font-size: 11px;
-			font-weight: 500;
-			line-height: 16px;
-			white-space: nowrap;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			cursor: pointer;
-			box-sizing: border-box;
-
-			&:hover,
-			&:focus-visible {
-				border-color: var(--color-info);
-				background: var(--color-info-soft);
-				color: var(--color-info);
-				outline: none;
-			}
-
-			&.is-selected {
-				border-color: var(--color-primary);
-				background: var(--color-primary-soft);
-				color: var(--color-primary);
-				box-shadow: 0 0 0 1px var(--color-primary);
-			}
-		}
-
 		.button {
 			flex: 0 0 auto;
 			margin-left: 0;
@@ -237,6 +212,10 @@
 
 		.button.button-primary {
 			margin-left: auto;
+		}
+
+		&.tsp-print-document-status-product .button.button-primary {
+			margin-left: 0;
 		}
 
 		.button-link-delete {
@@ -285,13 +264,160 @@
 	.tsp-print-job-section.tsp-print-fields-locked {
 		.tsp-print-input:disabled {
 			cursor: not-allowed;
-			background: var(--color-bg);
-			color: var(--color-text-secondary);
-			opacity: .58;
+			background: #fff;
+			border-color: var(--color-border-strong);
+			color: #1a2233;
+			opacity: 1;
 		}
 
 		.frame__item:has(.tsp-print-input:disabled) {
-			opacity: .62;
+			opacity: 1;
+
+			.item__label,
+			.item__label .__label {
+				color: #1a2233;
+				opacity: 1;
+			}
+		}
+	}
+
+	.tsp-print-product-panel {
+		grid-column: 1 / -1;
+		margin-top: 16px;
+		padding: 16px;
+		border: 1px solid var(--color-border);
+		border-radius: 6px;
+		background: #fff;
+
+		h3 {
+			margin: 0 0 12px;
+			font-size: 13px;
+			font-weight: 600;
+		}
+
+		.tsp-print-product-layout {
+			display: grid;
+			grid-template-columns: minmax(180px, 1fr) minmax(0, 2fr);
+			gap: 16px;
+			align-items: stretch;
+		}
+
+		.tsp-print-product-thumbnail {
+			position: relative;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			height: 300px;
+			min-height: 300px;
+			overflow: hidden;
+			border: 1px solid var(--color-border);
+			border-radius: 5px;
+			background: var(--color-primary-soft);
+
+			img {
+				width: 100%;
+				height: 100%;
+				object-fit: contain;
+			}
+		}
+
+		.tsp-print-product-name-fallback {
+			padding: 20px;
+			text-align: center;
+			font-size: 13px;
+			font-weight: 600;
+			color: var(--color-text-secondary);
+		}
+
+		.tsp-print-product-item-status {
+			position: absolute;
+			top: 8px;
+			left: 8px;
+			padding: 4px 7px;
+			border-radius: 10px;
+			background: var(--color-warning-soft);
+			color: var(--color-warning);
+			font-size: 11px;
+
+			&.is-ready {
+				background: var(--color-success-soft);
+				color: var(--color-success);
+			}
+		}
+
+		.tsp-print-product-thumbnail img {
+			max-width: 100%;
+			max-height: 100%;
+		}
+
+		.tsp-print-product-nav {
+			position: absolute;
+			top: 50%;
+			z-index: 2;
+			width: 28px;
+			height: 40px;
+			padding: 0;
+			transform: translateY(-50%);
+			border: 1px solid var(--color-border-strong);
+			border-radius: 4px;
+			background: var(--color-bg);
+			font-size: 22px;
+			line-height: 36px;
+		}
+
+		.tsp-print-product-nav-prev { left: 8px; }
+		.tsp-print-product-nav-next { right: 8px; }
+
+		.tsp-print-product-counter {
+			position: absolute;
+			right: 8px;
+			bottom: 8px;
+			padding: 3px 6px;
+			border-radius: 9px;
+			background: rgb(0 0 0 / 55%);
+			color: #fff;
+		}
+
+		.tsp-print-product-info {
+			min-width: 0;
+		}
+
+		.tsp-print-job-section-product {
+			margin: 0;
+			gap: 8px;
+
+			.frame__item {
+				margin-bottom: 8px;
+			}
+
+			.item__label .__label {
+				margin-bottom: 5px;
+				font-size: 13px !important;
+				font-weight: 400 !important;
+			}
+
+			input.tsp-print-input:not([type='hidden']),
+			select.tsp-print-input {
+				height: 32px !important;
+				min-height: 32px !important;
+				padding: 0 8px !important;
+				font-size: 13px !important;
+				font-weight: 400 !important;
+				line-height: 30px !important;
+			}
+
+			textarea.tsp-print-input {
+				min-height: 52px !important;
+				padding: 5px 8px !important;
+				font-size: 13px !important;
+				font-weight: 400 !important;
+				line-height: 1.35 !important;
+			}
+
+			.tsp-print-job-two-col {
+				gap: 8px;
+			}
+
 		}
 	}
 
@@ -533,7 +659,7 @@
 
 		th {
 			width: 32%;
-			background: var(--color-surface);
+			background: #fff;
 		}
 
 		.tsp-print-sheet-section th {
@@ -760,6 +886,10 @@
 	}
 
 	.tsp-print-files-layout {
+		grid-template-columns: 1fr;
+	}
+
+	.tsp-print-product-panel .tsp-print-product-layout {
 		grid-template-columns: 1fr;
 	}
 

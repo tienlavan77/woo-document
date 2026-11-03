@@ -210,7 +210,7 @@ class DocumentModel {
         if ($is_debug) error_log('getFileDetailByPath: Processing slug: ' . $clean_slug);
 
         $filename = $clean_slug;
-        if (!str_ends_with(strtolower($filename), '.pdf')) {
+        if (substr(strtolower($filename), -4) !== '.pdf') {
             $filename .= '.pdf';
         }
 

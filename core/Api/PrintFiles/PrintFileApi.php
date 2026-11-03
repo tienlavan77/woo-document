@@ -46,9 +46,19 @@ class PrintFileApi extends Api {
             ['methods' => 'GET', 'callback' => [$this, 'listJobs'], 'permission_callback' => [$this, 'permission']],
             ['methods' => 'POST', 'callback' => [$this, 'createJob'], 'permission_callback' => [$this, 'permission']],
         ]);
+        register_rest_route(self::$namespace, '/orders/(?P<order_id>\d+)/product-tickets', [
+            ['methods' => 'POST', 'callback' => [$this, 'createProductTicket'], 'permission_callback' => [$this, 'permission']],
+        ]);
+        register_rest_route(self::$namespace, '/orders/(?P<order_id>\d+)/print-files/(?P<asset_id>\d+)', [
+            ['methods' => 'DELETE', 'callback' => [$this, 'detachAsset'], 'permission_callback' => [$this, 'permission']],
+        ]);
         register_rest_route(self::$namespace, '/print-jobs/(?P<id>\d+)', [
             ['methods' => ['PUT', 'PATCH'], 'callback' => [$this, 'updateJob'], 'permission_callback' => [$this, 'permission']],
             ['methods' => 'DELETE', 'callback' => [$this, 'deleteJob'], 'permission_callback' => [$this, 'permission']],
+        ]);
+        register_rest_route(self::$namespace, '/product-tickets/(?P<id>\d+)', [
+            ['methods' => ['PUT', 'PATCH'], 'callback' => [$this, 'updateProductTicket'], 'permission_callback' => [$this, 'permission']],
+            ['methods' => 'DELETE', 'callback' => [$this, 'deleteProductTicket'], 'permission_callback' => [$this, 'permission']],
         ]);
         register_rest_route(self::$namespace, '/print-jobs/(?P<id>\d+)/print-ticket', [
             ['methods' => 'DELETE', 'callback' => [$this, 'deletePrintTicket'], 'permission_callback' => [$this, 'permission']],
@@ -104,15 +114,40 @@ class PrintFileApi extends Api {
         return is_wp_error($result) ? $result : $this->success($result, 'Đã gắn file và lưu phiếu in.', 201);
     }
 
+    public function createProductTicket(WP_REST_Request $request) {
+        $data = $request->get_json_params();
+        $result = $this->model->createProductTicket($request->get_param('order_id'), is_array($data) ? $data : []);
+        return is_wp_error($result) ? $result : $this->success($result, 'Đã lưu phiếu thành phẩm.', 201);
+    }
+
+    public function detachAsset(WP_REST_Request $request) {
+        $result = $this->model->detachAssetFromOrder(
+            $request->get_param('order_id'),
+            $request->get_param('asset_id')
+        );
+        return is_wp_error($result) ? $result : $this->success(null, 'Đã gỡ file khỏi đơn hàng.');
+    }
+
     public function updateJob(WP_REST_Request $request) {
         $data = $request->get_json_params();
         $result = $this->model->updateJob($request->get_param('id'), is_array($data) ? $data : []);
         return is_wp_error($result) ? $result : $this->success($result, 'Đã cập nhật phiếu in.');
     }
 
+    public function updateProductTicket(WP_REST_Request $request) {
+        $data = $request->get_json_params();
+        $result = $this->model->updateProductTicket($request->get_param('id'), is_array($data) ? $data : []);
+        return is_wp_error($result) ? $result : $this->success($result, 'Đã cập nhật phiếu thành phẩm.');
+    }
+
     public function deleteJob(WP_REST_Request $request) {
         $result = $this->model->deleteJob($request->get_param('id'));
         return is_wp_error($result) ? $result : $this->success(null, 'Đã gỡ file khỏi đơn hàng.');
+    }
+
+    public function deleteProductTicket(WP_REST_Request $request) {
+        $result = $this->model->deleteProductTicket($request->get_param('id'));
+        return is_wp_error($result) ? $result : $this->success(null, 'Đã gỡ phiếu thành phẩm.');
     }
 
     public function deletePrintTicket(WP_REST_Request $request) {
