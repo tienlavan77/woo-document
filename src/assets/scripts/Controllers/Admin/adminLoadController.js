@@ -1,15 +1,16 @@
+// Provides module declarations and business logic for adminLoadController.js.
+
 import ModuleLoader from "../../Vendor/helpers/loadModule";
 import TextHelper from "../../Vendor/helpers/textHelper";
 import App from "../../app.js";
 
+// Defines AdminLoadController class behavior for adminLoadController.js.
 export default class AdminLoadController {
-   /**
-    * @param {Object} [pageData] - Thông tin định tuyến { page, type } được truyền từ App
-    */
+   /* Executes documented symbol logic in adminLoadController.js. */
    constructor(pageData = null) {
       this.pageData = pageData || App.getPageData();
 
-      // Danh sách các controller có thể tải
+      // Executes documented symbol logic in adminLoadController.js.
       this.loadController = {
          adminSetting: () => this._importModule('Admin/Setting/settingController'),
          adminQuotation: () => this._importModule('Admin/Quotation/quotationAdminController'),
@@ -19,10 +20,7 @@ export default class AdminLoadController {
       this.init(this.pageData);
    }
 
-   /**
-    * Phương thức khởi tạo: Nhận dữ liệu định tuyến từ App và kích hoạt module tương ứng.
-    * @param {Object} [routeData]
-    */
+   /* Executes documented symbol logic in adminLoadController.js. */
    init(routeData = null) {
       try {
          const { page, type } = routeData || this.pageData || {};
@@ -31,10 +29,10 @@ export default class AdminLoadController {
             throw new Error("Dữ liệu page hoặc type không hợp lệ.");
          }
 
-         // Tạo tên hàm cần gọi (ví dụ: admin + Setting = adminSetting)
+         // Executes documented symbol logic in adminLoadController.js.
          const methodName = `${page}${TextHelper.capitalize(type)}`;
 
-         // Kiểm tra xem phương thức có tồn tại trong danh sách loadController không
+         // Executes documented symbol logic in adminLoadController.js.
          if (typeof this.loadController[methodName] === 'function') {
             this.loadController[methodName]();
          } else {
@@ -46,11 +44,7 @@ export default class AdminLoadController {
       }
    }
 
-   /**
-    * Hàm hỗ trợ tải module để tránh lặp lại code (DRY - Don't Repeat Yourself)
-    * @param {string} path - Đường dẫn tương đối từ ADM_DIR
-    * @private
-    */
+   /* Executes documented symbol logic in adminLoadController.js. */
    _importModule(path) {
       return ModuleLoader.load(`${path}`);
    }

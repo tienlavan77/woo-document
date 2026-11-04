@@ -1,4 +1,6 @@
 <?php
+// Provides module declarations and business logic for PrintFileApi.php.
+
 
 namespace App\Api\PrintFiles;
 
@@ -10,20 +12,24 @@ if (!defined('ABSPATH')) {
     exit;
 }
 
+// Defines PrintFileApi class behavior for PrintFileApi.php.
 class PrintFileApi extends Api {
     protected static $instance;
 
+    // Defines get_instance method behavior for PrintFileApi.php.
     public static function get_instance() {
         if (is_null(self::$instance)) self::$instance = new self();
         return self::$instance;
     }
 
+    // Defines __construct method behavior for PrintFileApi.php.
     public function __construct() {
         self::$instance = $this;
         $this->model = new PrintFileModel();
         parent::__construct();
     }
 
+    // Defines routesRegister method behavior for PrintFileApi.php.
     public function routesRegister() {
         register_rest_route(self::$namespace, '/print-files', [
             ['methods' => 'GET', 'callback' => [$this, 'listFiles'], 'permission_callback' => [$this, 'permission']],
@@ -70,6 +76,7 @@ class PrintFileApi extends Api {
         ]);
     }
 
+    // Defines permission method behavior for PrintFileApi.php.
     public function permission(WP_REST_Request $request) {
         return $this->checkJwtAndCapability(
             $request,
@@ -78,52 +85,62 @@ class PrintFileApi extends Api {
         );
     }
 
+    // Defines listFiles method behavior for PrintFileApi.php.
     public function listFiles(WP_REST_Request $request) {
         return $this->sendSuccess($this->model->listAssets($request->get_param('page'), $request->get_param('count'), $request->get_param('search')));
     }
 
+    // Defines listMaterials method behavior for PrintFileApi.php.
     public function listMaterials() {
         $result = $this->model->listMaterials();
         return is_wp_error($result) ? $result : $this->sendSuccess(['materials' => $result]);
     }
 
+    // Defines listPrintOptions method behavior for PrintFileApi.php.
     public function listPrintOptions() {
         $result = $this->model->listPrintOptions();
         return is_wp_error($result) ? $result : $this->sendSuccess($result);
     }
 
+    // Defines uploadFile method behavior for PrintFileApi.php.
     public function uploadFile(WP_REST_Request $request) {
         $result = $this->model->uploadAsset($_FILES['file'] ?? null);
         return is_wp_error($result) ? $result : $this->sendSuccess($this->model->assetPayloadForApi($result), 'Tải file in thành công.', 201);
     }
 
+    // Defines getFile method behavior for PrintFileApi.php.
     public function getFile(WP_REST_Request $request) {
         $result = $this->model->getAsset($request->get_param('id'));
         return is_wp_error($result) ? $result : $this->sendSuccess($this->model->assetPayloadForApi($result));
     }
 
+    // Defines deleteFile method behavior for PrintFileApi.php.
     public function deleteFile(WP_REST_Request $request) {
         $result = $this->model->deleteAsset($request->get_param('id'));
         return is_wp_error($result) ? $result : $this->sendSuccess(null, 'Đã xóa file khỏi thư viện.');
     }
 
+    // Defines listJobs method behavior for PrintFileApi.php.
     public function listJobs(WP_REST_Request $request) {
         $result = $this->model->getOrderJobs($request->get_param('order_id'));
         return is_wp_error($result) ? $result : $this->sendSuccess($result);
     }
 
+    // Defines createJob method behavior for PrintFileApi.php.
     public function createJob(WP_REST_Request $request) {
         $data = $request->get_json_params();
         $result = $this->model->createJob($request->get_param('order_id'), is_array($data) ? $data : []);
         return is_wp_error($result) ? $result : $this->sendSuccess($result, 'Đã gắn file và lưu phiếu in.', 201);
     }
 
+    // Defines createProductTicket method behavior for PrintFileApi.php.
     public function createProductTicket(WP_REST_Request $request) {
         $data = $request->get_json_params();
         $result = $this->model->createProductTicket($request->get_param('order_id'), is_array($data) ? $data : []);
         return is_wp_error($result) ? $result : $this->sendSuccess($result, 'Đã lưu phiếu thành phẩm.', 201);
     }
 
+    // Defines detachAsset method behavior for PrintFileApi.php.
     public function detachAsset(WP_REST_Request $request) {
         $result = $this->model->detachAssetFromOrder(
             $request->get_param('order_id'),
@@ -132,43 +149,51 @@ class PrintFileApi extends Api {
         return is_wp_error($result) ? $result : $this->sendSuccess(null, 'Đã gỡ file khỏi đơn hàng.');
     }
 
+    // Defines updateJob method behavior for PrintFileApi.php.
     public function updateJob(WP_REST_Request $request) {
         $data = $request->get_json_params();
         $result = $this->model->updateJob($request->get_param('id'), is_array($data) ? $data : []);
         return is_wp_error($result) ? $result : $this->sendSuccess($result, 'Đã cập nhật phiếu in.');
     }
 
+    // Defines updateProductTicket method behavior for PrintFileApi.php.
     public function updateProductTicket(WP_REST_Request $request) {
         $data = $request->get_json_params();
         $result = $this->model->updateProductTicket($request->get_param('id'), is_array($data) ? $data : []);
         return is_wp_error($result) ? $result : $this->sendSuccess($result, 'Đã cập nhật phiếu thành phẩm.');
     }
 
+    // Defines deleteJob method behavior for PrintFileApi.php.
     public function deleteJob(WP_REST_Request $request) {
         $result = $this->model->deleteJob($request->get_param('id'));
         return is_wp_error($result) ? $result : $this->sendSuccess(null, 'Đã gỡ file khỏi đơn hàng.');
     }
 
+    // Defines deleteProductTicket method behavior for PrintFileApi.php.
     public function deleteProductTicket(WP_REST_Request $request) {
         $result = $this->model->deleteProductTicket($request->get_param('id'));
         return is_wp_error($result) ? $result : $this->sendSuccess(null, 'Đã gỡ phiếu thành phẩm.');
     }
 
+    // Defines deletePrintTicket method behavior for PrintFileApi.php.
     public function deletePrintTicket(WP_REST_Request $request) {
         $result = $this->model->deletePrintTicket($request->get_param('id'));
         return is_wp_error($result) ? $result : $this->sendSuccess(null, 'Đã gỡ phiếu in.');
     }
 
+    // Defines thumbnail method behavior for PrintFileApi.php.
     public function thumbnail(WP_REST_Request $request) {
         return $this->streamBinary($request->get_param('id'), 'thumbnail', 'image/png', '', true);
     }
 
+    // Defines stream method behavior for PrintFileApi.php.
     public function stream(WP_REST_Request $request) {
         $asset = $this->model->getAsset($request->get_param('id'));
         if (is_wp_error($asset)) return $asset;
         return $this->streamBinary($request->get_param('id'), 'original', $asset['mime_type'] ?: 'application/octet-stream', $asset['original_name']);
     }
 
+    // Defines streamBinary method behavior for PrintFileApi.php.
     private function streamBinary($asset_id, $kind, $mime, $download_name = '', $cacheable = false) {
         $path = $this->model->getAssetFilePath($asset_id, $kind);
         if (is_wp_error($path)) return $path;

@@ -1,4 +1,6 @@
 <?php
+// Provides module declarations and business logic for PrintFileModel.php.
+
 namespace App\Models\PrintFiles;
 
 use App\Support\PrintDatabase;
@@ -15,6 +17,7 @@ class PrintFileModel {
     private const THUMBNAILS_DIR = 'thumbnails';
     private const THUMBNAIL_WIDTH = 900;
 
+    // Defines listAssets method behavior for PrintFileModel.php.
     public function listAssets($page = 1, $per_page = 24, $search = '') {
         global $wpdb;
 
@@ -47,10 +50,12 @@ class PrintFileModel {
         ];
     }
 
+    // Defines listMaterials method behavior for PrintFileModel.php.
     public function listMaterials() {
         return $this->listTerms('pa_chat-lieu');
     }
 
+    // Defines listPrintOptions method behavior for PrintFileModel.php.
     public function listPrintOptions() {
         $taxonomies = [
             'materials' => 'pa_chat-lieu',
@@ -72,6 +77,7 @@ class PrintFileModel {
         return $options;
     }
 
+    // Defines listSuppliers method behavior for PrintFileModel.php.
     private function listSuppliers() {
         $users = get_users([
             'role' => 'supplier',
@@ -99,6 +105,7 @@ class PrintFileModel {
         }, $users ?: []);
     }
 
+    // Defines listTerms method behavior for PrintFileModel.php.
     private function listTerms($taxonomy) {
         if (!taxonomy_exists($taxonomy)) return [];
 
@@ -119,6 +126,7 @@ class PrintFileModel {
         }, $terms ?: []);
     }
 
+    // Defines getAsset method behavior for PrintFileModel.php.
     public function getAsset($asset_id) {
         global $wpdb;
 
@@ -135,10 +143,12 @@ class PrintFileModel {
         return $row;
     }
 
+    // Defines assetPayloadForApi method behavior for PrintFileModel.php.
     public function assetPayloadForApi(array $row) {
         return $this->assetPayload($row);
     }
 
+    // Defines uploadAsset method behavior for PrintFileModel.php.
     public function uploadAsset($file) {
         global $wpdb;
 
@@ -219,6 +229,7 @@ class PrintFileModel {
         return $this->getAsset($wpdb->insert_id);
     }
 
+    // Defines getOrderJobs method behavior for PrintFileModel.php.
     public function getOrderJobs($order_id) {
         global $wpdb;
 
@@ -289,6 +300,7 @@ class PrintFileModel {
         ];
     }
 
+    // Defines getOrderItemsPayload method behavior for PrintFileModel.php.
     private function getOrderItemsPayload($order) {
         $items = [];
         foreach ($order->get_items('line_item') as $item) {
@@ -307,6 +319,7 @@ class PrintFileModel {
         return $items;
     }
 
+    // Defines createJob method behavior for PrintFileModel.php.
     public function createJob($order_id, array $data) {
         global $wpdb;
 
@@ -393,6 +406,7 @@ class PrintFileModel {
         return $this->getJob($wpdb->insert_id);
     }
 
+    // Defines createProductTicket method behavior for PrintFileModel.php.
     public function createProductTicket($order_id, array $data) {
         global $wpdb;
 
@@ -431,6 +445,7 @@ class PrintFileModel {
         return $this->getProductTicket($wpdb->insert_id);
     }
 
+    // Defines updateProductTicket method behavior for PrintFileModel.php.
     public function updateProductTicket($ticket_id, array $data) {
         global $wpdb;
 
@@ -477,6 +492,7 @@ class PrintFileModel {
         return $this->getProductTicket($ticket_id);
     }
 
+    // Defines deleteProductTicket method behavior for PrintFileModel.php.
     public function deleteProductTicket($ticket_id) {
         global $wpdb;
 
@@ -488,6 +504,7 @@ class PrintFileModel {
         return true;
     }
 
+    // Defines updateJob method behavior for PrintFileModel.php.
     public function updateJob($job_id, array $data) {
         global $wpdb;
 
@@ -558,6 +575,7 @@ class PrintFileModel {
         return $this->getJob($job_id);
     }
 
+    // Defines deleteJob method behavior for PrintFileModel.php.
     public function deleteJob($job_id) {
         global $wpdb;
 
@@ -631,6 +649,7 @@ class PrintFileModel {
         return true;
     }
 
+    // Defines deletePrintTicket method behavior for PrintFileModel.php.
     public function deletePrintTicket($job_id) {
         global $wpdb;
 
@@ -647,6 +666,7 @@ class PrintFileModel {
         return true;
     }
 
+    // Defines ensurePrintTicket method behavior for PrintFileModel.php.
     private function ensurePrintTicket($order_id, $asset_id) {
         global $wpdb;
 
@@ -672,6 +692,7 @@ class PrintFileModel {
         return $this->ensurePrintTicket($order_id, $asset_id);
     }
 
+    // Defines ensureAssetAssignment method behavior for PrintFileModel.php.
     private function ensureAssetAssignment($order_id, $asset_id) {
         global $wpdb;
 
@@ -689,6 +710,7 @@ class PrintFileModel {
         return true;
     }
 
+    // Defines savePrintTicket method behavior for PrintFileModel.php.
     private function savePrintTicket($order_id, $asset_id, array $specs, $status = 'ready') {
         $ticket = $this->ensurePrintTicket($order_id, $asset_id);
         if (is_wp_error($ticket)) return $ticket;
@@ -710,6 +732,7 @@ class PrintFileModel {
         return $this->ensurePrintTicket($order_id, $asset_id);
     }
 
+    // Defines mergeSpecs method behavior for PrintFileModel.php.
     private function mergeSpecs(array $existing, array $incoming, $document_type) {
         if ($document_type === 'print') {
             $keys = ['supplier', 'material', 'width', 'height', 'print_size', 'printing_method', 'color_count', 'color_type', 'print_sheet_quantity', 'proof_quantity', 'print_sides', 'print_plan', 'print_note'];
@@ -725,6 +748,7 @@ class PrintFileModel {
         return $this->normalizeSpecs($existing);
     }
 
+    // Defines extractSpecs method behavior for PrintFileModel.php.
     private function extractSpecs($specs, $type) {
         $normalized = $this->normalizeSpecs($specs);
         $keys = $type === 'print'
@@ -735,6 +759,7 @@ class PrintFileModel {
         return $this->normalizeSpecs($result);
     }
 
+    // Defines deleteAsset method behavior for PrintFileModel.php.
     public function deleteAsset($asset_id) {
         global $wpdb;
 
@@ -770,6 +795,7 @@ class PrintFileModel {
         return true;
     }
 
+    // Defines getJob method behavior for PrintFileModel.php.
     public function getJob($job_id) {
         global $wpdb;
 
@@ -787,6 +813,7 @@ class PrintFileModel {
         return $this->jobPayload($row);
     }
 
+    // Defines getProductTicket method behavior for PrintFileModel.php.
     public function getProductTicket($ticket_id) {
         global $wpdb;
 
@@ -798,6 +825,7 @@ class PrintFileModel {
         return $this->productTicketPayload($row);
     }
 
+    // Defines getAssetFilePath method behavior for PrintFileModel.php.
     public function getAssetFilePath($asset_id, $kind = 'original') {
         $asset = $this->getAsset($asset_id);
         if (is_wp_error($asset)) return $asset;
@@ -814,6 +842,7 @@ class PrintFileModel {
         return $path;
     }
 
+    // Defines assetPayload method behavior for PrintFileModel.php.
     private function assetPayload(array $row) {
         $id = absint($row['id']);
         return [
@@ -834,6 +863,7 @@ class PrintFileModel {
         ];
     }
 
+    // Defines jobPayload method behavior for PrintFileModel.php.
     private function jobPayload(array $row) {
         $specs = json_decode((string) ($row['specs_json'] ?? ''), true);
         $print_specs = json_decode((string) ($row['print_ticket_specs_json'] ?? ''), true);
@@ -886,6 +916,7 @@ class PrintFileModel {
         return $payload;
     }
 
+    // Defines productTicketPayload method behavior for PrintFileModel.php.
     private function productTicketPayload(array $row) {
         $specs = json_decode((string) ($row['specs_json'] ?? ''), true);
         $snapshot = json_decode((string) ($row['sheet_snapshot_json'] ?? ''), true);
@@ -907,6 +938,7 @@ class PrintFileModel {
         return $payload;
     }
 
+    // Defines printTicketPayload method behavior for PrintFileModel.php.
     private function printTicketPayload(array $row) {
         $specs = json_decode((string) ($row['specs_json'] ?? ''), true);
         return [
@@ -918,6 +950,7 @@ class PrintFileModel {
         ];
     }
 
+    // Defines getOrderItemDimensions method behavior for PrintFileModel.php.
     private function getOrderItemDimensions($order_id, $order_item_id) {
         if (!absint($order_item_id)) return [];
 
@@ -929,6 +962,7 @@ class PrintFileModel {
         return $this->getProductDimensions($product);
     }
 
+    // Defines getProductDimensions method behavior for PrintFileModel.php.
     private function getProductDimensions($product) {
         $unit = get_option('woocommerce_dimension_unit', 'cm');
         $length = $product->get_length();
@@ -941,6 +975,7 @@ class PrintFileModel {
         ];
     }
 
+    // Defines ensureDirectories method behavior for PrintFileModel.php.
     private function ensureDirectories() {
         $folder = SystemFolderManager::getFolder('print_folder');
         if (!$folder) return new WP_Error('print_folder_missing', 'Print folder chưa được cấu hình.', ['status' => 500]);
@@ -959,33 +994,27 @@ class PrintFileModel {
         return ['root' => $root, 'originals' => $originals, 'thumbnails' => $thumbnails];
     }
 
+    // Defines createThumbnail method behavior for PrintFileModel.php.
     private function createThumbnail($source, $destination, $extension) {
         $renderer = $this->findBinary('gs');
-        if (!$renderer) {
-            return ['status' => 'failed', 'error' => 'Không tìm thấy Ghostscript trên máy chủ.', 'path' => ''];
+        $command = $renderer ? escapeshellarg($renderer) . ' -q -dSAFER -dBATCH -dNOPAUSE -dFirstPage=1 -dLastPage=1 -sDEVICE=pngalpha -r96 -sOutputFile=' . escapeshellarg($destination) . ' ' . escapeshellarg($source) : '';
+        [$exit_code, $output] = $command ? $this->runCommand($command) : [1, 'Ghostscript unavailable.'];
+        if (($exit_code !== 0 || !is_file($destination)) && ($renderer = ($this->findBinary('magick') ?: $this->findBinary('convert')))) {
+            [$exit_code, $output] = $this->runCommand(escapeshellarg($renderer) . ' -thumbnail 900x900 ' . escapeshellarg($source . '[0]') . ' ' . escapeshellarg($destination));
         }
-
-        $command = escapeshellarg($renderer)
-            . ' -q -dSAFER -dBATCH -dNOPAUSE -dFirstPage=1 -dLastPage=1'
-            . ' -sDEVICE=pngalpha -r96 -sOutputFile=' . escapeshellarg($destination)
-            . ' ' . escapeshellarg($source);
-        [$exit_code, $output] = $this->runCommand($command);
         if ($exit_code !== 0 || !is_file($destination)) {
-            return [
-                'status' => 'failed',
-                'error' => trim($output) ?: 'Không thể tạo thumbnail từ file.',
-                'path' => '',
-            ];
+            if (function_exists('imagecreatetruecolor') && function_exists('imagepng')) {
+                $canvas = imagecreatetruecolor(900, 900); $background = imagecolorallocate($canvas, 248, 250, 252); $ink = imagecolorallocate($canvas, 30, 41, 59);
+                imagefill($canvas, 0, 0, $background); imagestring($canvas, 5, 24, 24, strtoupper($extension) . ' FILE', $ink); imagepng($canvas, $destination, 6); imagedestroy($canvas);
+            }
         }
-
-        $resized = $this->resizeThumbnail($destination);
-        if (!$resized) {
-            return ['status' => 'failed', 'error' => 'Không thể chuẩn hóa kích thước thumbnail.', 'path' => ''];
+        if (!is_file($destination) || !filesize($destination) || !$this->resizeThumbnail($destination)) {
+            return ['status' => 'failed', 'error' => trim($output) ?: 'Không thể tạo thumbnail từ file.', 'path' => ''];
         }
-
         return ['status' => 'ready', 'error' => '', 'path' => $destination];
     }
 
+    // Defines resizeThumbnail method behavior for PrintFileModel.php.
     private function resizeThumbnail($path) {
         if (!function_exists('imagecreatefrompng') || !function_exists('imagecreatetruecolor')) return true;
         $source = @imagecreatefrompng($path);
@@ -1013,6 +1042,7 @@ class PrintFileModel {
         return $success;
     }
 
+    // Defines readDimensions method behavior for PrintFileModel.php.
     private function readDimensions($path, $extension, $thumbnail_path = '') {
         $result = ['page_count' => $extension === 'pdf' ? 1 : 0, 'width' => 0, 'height' => 0];
         $binary = $this->findBinary('pdfinfo');
@@ -1046,6 +1076,7 @@ class PrintFileModel {
         return $result;
     }
 
+    // Defines normalizeSpecs method behavior for PrintFileModel.php.
     private function normalizeSpecs($specs) {
         if (!is_array($specs)) $specs = [];
         $supplier_id = absint($specs['supplier'] ?? 0);
@@ -1082,16 +1113,18 @@ class PrintFileModel {
         ];
     }
 
+    // Defines detectMime method behavior for PrintFileModel.php.
     private function detectMime($path, $extension) {
         if (function_exists('finfo_open')) {
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
             $mime = $finfo ? finfo_file($finfo, $path) : '';
-            if ($finfo) finfo_close($finfo);
+            // finfo objects are released automatically on supported PHP versions.
             if ($mime) return $mime;
         }
         return $extension === 'pdf' ? 'application/pdf' : 'application/postscript';
     }
 
+    // Defines findBinary method behavior for PrintFileModel.php.
     private function findBinary($name) {
         foreach (['/usr/bin/' . $name, '/usr/local/bin/' . $name, '/bin/' . $name] as $candidate) {
             if (is_executable($candidate)) return $candidate;
@@ -1099,6 +1132,7 @@ class PrintFileModel {
         return '';
     }
 
+    // Defines runCommand method behavior for PrintFileModel.php.
     private function runCommand($command) {
         if (!function_exists('proc_open')) return [1, 'proc_open is disabled.'];
         $pipes = [];

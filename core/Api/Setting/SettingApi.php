@@ -1,4 +1,6 @@
 <?php
+// Provides module declarations and business logic for SettingApi.php.
+
 
 namespace App\Api\Setting;
 
@@ -11,6 +13,7 @@ if (!defined('ABSPATH')) {
    exit;
 }
 
+// Defines SettingApi class behavior for SettingApi.php.
 class SettingApi extends Api {
 
    protected static $instance;
@@ -27,6 +30,7 @@ class SettingApi extends Api {
       return self::$instance;
    }
 
+   // Defines __construct method behavior for SettingApi.php.
    public function __construct() {
       self::$instance = $this;
       parent::__construct();
@@ -97,6 +101,7 @@ class SettingApi extends Api {
       );
    }
 
+   // Defines adminPermission method behavior for SettingApi.php.
    public function adminPermission(WP_REST_Request $request) {
       return $this->checkJwtAndCapability(
          $request,
@@ -116,6 +121,7 @@ class SettingApi extends Api {
       );
    }
 
+   // Defines setSystemSetting method behavior for SettingApi.php.
    public function setSystemSetting(WP_REST_Request $request) {
       $data = $request->get_json_params();
       $result = SettingModel::setSystemSetting(is_array($data) ? $data : []);
@@ -131,6 +137,7 @@ class SettingApi extends Api {
       );
    }
 
+   // Defines browseSystemFolder method behavior for SettingApi.php.
    public function browseSystemFolder(WP_REST_Request $request) {
       $result = SettingModel::browseSystemFolder($request->get_param('path'));
       if (is_wp_error($result)) {
@@ -156,6 +163,7 @@ class SettingApi extends Api {
       return $this->sendSuccess(json_decode($result), 'Read successfully', 200, 200);
    }
 
+   // Defines setCompanySetting method behavior for SettingApi.php.
    public function setCompanySetting(WP_REST_Request $request) {
       $data = json_decode($request->get_body());
 
@@ -171,6 +179,7 @@ class SettingApi extends Api {
       return $this->sendSuccess($data, 'Write successfully', 200, 200);
    }
 
+   // Defines getUserSetting method behavior for SettingApi.php.
    public function getUserSetting(WP_REST_Request $request) {
       $userId = $request->get_param('current_user_id');
 
@@ -182,6 +191,7 @@ class SettingApi extends Api {
       return $this->sendSuccess($result, 'get data successfully', 200, 200);
    }
 
+   // Defines setUserSetting method behavior for SettingApi.php.
    public function setUserSetting(WP_REST_Request $request) {
       $userId = $request->get_param('current_user_id');
       $data = json_decode($request->get_body());

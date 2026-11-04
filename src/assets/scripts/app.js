@@ -1,19 +1,21 @@
+// Provides module declarations and business logic for app.js.
+
 import ModuleLoader from './Vendor/helpers/loadModule.js';
 import AuthController from './Controllers/Admin/Authenticate/authController.js';
 
+// Defines App class behavior for app.js.
 export default class App {
     static pageData = null;
 
+    // Defines getPageData method behavior for app.js.
     static getPageData() {
         return App.pageData;
     }
 
+    // Defines constructor method behavior for app.js.
     constructor() {
         this.auth = new AuthController();
-        /**
-         * Cấu trúc Route Map: Ánh xạ giữa tên trang (page key) và đường dẫn Controller.
-         * Giúp dễ dàng thêm trang mới mà không cần sửa logic khởi tạo.
-         */
+        /* Executes documented symbol logic in app.js. */
         this.routeMap = {
             'edit':  'WooCommerce/wooCommerceController',
             'users': 'WooCommerce/wooCommerceController',
@@ -22,10 +24,7 @@ export default class App {
         };
     }
 
-    /**
-     * Phương thức khởi tạo ứng dụng
-     * Đọc thông tin từ Meta tag một lần duy nhất và kích hoạt Controller tương ứng.
-     */
+    /* Executes documented symbol logic in app.js. */
     async init() {
         if (App.isStarted) return;
         App.isStarted = true;
@@ -44,7 +43,7 @@ export default class App {
                 throw new Error("Dữ liệu trang (page) không tồn tại trong dataset.");
             }
 
-            // Lưu thông tin định tuyến đã parse để truyền xuống các bộ nạp controller
+            // Executes documented symbol logic in app.js.
             App.pageData = pageData;
 
             const controllerPath = this.routeMap[currentPage];

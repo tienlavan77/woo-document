@@ -1,4 +1,6 @@
 <?php
+// Provides module declarations and business logic for LoadingApi.php.
+
 
 namespace App\Api;
 
@@ -14,6 +16,7 @@ if (!defined('ABSPATH')) {
 	exit;
 }
 
+// Defines LoadingApi class behavior for LoadingApi.php.
 class LoadingApi {
 	private $hooks;
 	private $container;
@@ -25,16 +28,19 @@ class LoadingApi {
 		'printFileApi'    => PrintFileApi::class,
 	];
 	
+	// Defines __construct method behavior for LoadingApi.php.
 	public function __construct(HookManager $hooks, ?ServiceContainer $container = null) {
 		$this->hooks = $hooks;
 		$this->container = $container;
 		$this->registerApis();
 	}
 	
+	// Defines registerApis method behavior for LoadingApi.php.
 	private function registerApis() {
 		$this->hooks->addAction('rest_api_init', [$this, 'initializeApis']);
 	}
 	
+	// Defines initializeApis method behavior for LoadingApi.php.
 	public function initializeApis() {
 		foreach ($this->api_classes as $service_name => $api_class) {
 			if ($this->container && $this->container->has($service_name)) {

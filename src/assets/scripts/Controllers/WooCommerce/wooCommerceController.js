@@ -1,22 +1,20 @@
+// Provides module declarations and business logic for wooCommerceController.js.
+
 import ModuleLoader from '../../Vendor/helpers/loadModule';
 import TextHelper from '../../Vendor/helpers/textHelper';
 import App from '../../app.js';
 
+// Defines WooCommerceController class behavior for wooCommerceController.js.
 export default class WooCommerceController {
-   /**
-    * @param {Object} [pageData] - Thông tin định tuyến { page, type } được truyền từ App
-    */
+   /* Executes documented symbol logic in wooCommerceController.js. */
    constructor(pageData = null) {
       this.pageData = pageData || App.getPageData();
 
-      // Khởi chạy hệ thống
+      // Executes documented symbol logic in wooCommerceController.js.
       this.init(this.pageData);
    }
 
-   /**
-    * Danh mục các Controller và file tương ứng
-    * Sử dụng Getter để trả về object cấu hình
-    */
+   /* Executes documented symbol logic in wooCommerceController.js. */
    get routeMap() {
       return {
          'editOrder': 'Orders/orderController',
@@ -28,10 +26,7 @@ export default class WooCommerceController {
       };
    }
 
-   /**
-    * Khởi tạo logic chính: Nhận dữ liệu định tuyến từ App và kích hoạt controller
-    * @param {Object} [routeData]
-    */
+   /* Executes documented symbol logic in wooCommerceController.js. */
    async init(routeData = null) {
       try {
          const { page, type } = routeData || this.pageData || {};
@@ -41,10 +36,10 @@ export default class WooCommerceController {
             return;
          }
 
-         // Tạo key để định danh controller (Ví dụ: "edit" + "Product" = "editProduct")
+         // Executes documented symbol logic in wooCommerceController.js.
          const controllerKey = `${page}${TextHelper.capitalize(type)}`;
 
-         // Gọi hàm load module
+         // Executes documented symbol logic in wooCommerceController.js.
          await this._dispatch(controllerKey);
 
       } catch (error) {
@@ -52,10 +47,7 @@ export default class WooCommerceController {
       }
    }
 
-   /**
-    * Điều phối việc nạp Module dựa trên key
-    * @param {string} key - Tên controller cần load
-    */
+   /* Executes documented symbol logic in wooCommerceController.js. */
    async _dispatch(key) {
       const fileName = this.routeMap[key];
 

@@ -1,9 +1,4 @@
-/**
- * Bộ kiểm thử xác minh Giai đoạn 3 (O3 - Core Frontend JS) và Build Manifest Artifact.
- * Kiểm tra manifest Vite (dist/.vite/manifest.json), App.init() chỉ đọc/parse meta#pagenow 1 lần,
- * đồng bộ hóa các lớp Model (Quotation, Delivery, Invoice) qua tham số storageKey,
- * và bảo toàn localStorage keys cùng kênh BroadcastChannel (document_channel).
- */
+/* Provides module implementation and exported declarations for frontend-refactoring.test.mjs. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -13,18 +8,14 @@ import vm from 'node:vm';
 
 const ROOT_DIR = process.cwd();
 
-/**
- * Tính toán mã băm SHA-256 cho một tệp tin để đối chiếu bằng chứng.
- */
+/* Executes documented symbol logic in frontend-refactoring.test.mjs. */
 function sha256File(relPath) {
    const fullPath = path.join(ROOT_DIR, relPath);
    const buf = fs.readFileSync(fullPath);
    return 'sha256:' + crypto.createHash('sha256').update(buf).digest('hex');
 }
 
-/**
- * Nạp và đánh giá một module ES6 từ source để kiểm thử hành vi runtime độc lập.
- */
+/* Executes documented symbol logic in frontend-refactoring.test.mjs. */
 function loadEsModuleClass(relPath, injectedScope = {}) {
    const code = fs.readFileSync(path.join(ROOT_DIR, relPath), 'utf8')
       .replace(/import\.meta\.env\?\.DEV/g, 'false')
@@ -83,17 +74,21 @@ test('O3: Thực thi runtime Frontend JS kiểm chứng App.init() parse meta#pa
       clear: () => storageStore.clear(),
    };
    globalThis.localStorage = mockLocalStorage;
+   // Defines reload method behavior for frontend-refactoring.test.mjs.
    globalThis.window = { localStorage: mockLocalStorage, location: { href: '', reload() {} } };
 
    const broadcastMessages = [];
    globalThis.BroadcastChannel = class MockBroadcastChannel {
+      // Defines constructor method behavior for frontend-refactoring.test.mjs.
       constructor(name) {
          this.name = name;
          this.onmessage = null;
       }
+      // Defines postMessage method behavior for frontend-refactoring.test.mjs.
       postMessage(msg) {
          broadcastMessages.push({ channel: this.name, msg });
       }
+      // Defines close method behavior for frontend-refactoring.test.mjs.
       close() {}
    };
 
@@ -101,6 +96,7 @@ test('O3: Thực thi runtime Frontend JS kiểm chứng App.init() parse meta#pa
    let datasetPageGetterCount = 0;
    const mockMetaTag = {
       dataset: {
+         // Defines page method behavior for frontend-refactoring.test.mjs.
          get page() {
             datasetPageGetterCount++;
             return JSON.stringify({ page: 'admin', type: 'quotation' });
@@ -174,7 +170,7 @@ test('O3: Thực thi runtime Frontend JS kiểm chứng App.init() parse meta#pa
       VatModel,
    });
 
-   // 1. Kiểm tra CustomersModel & ProductModel mặc định và tham số hóa storageKey
+   // Executes documented symbol logic in frontend-refactoring.test.mjs.
    const defaultCustomer = new CustomersModel();
    const defaultProduct = new ProductModel();
    assert.equal(defaultCustomer.storageName, 'cs_quotation');
@@ -209,7 +205,7 @@ test('O3: Thực thi runtime Frontend JS kiểm chứng App.init() parse meta#pa
    assert.equal(StorageManager.get('cs_invoice').name, 'Khách Hóa Đơn');
    assert.equal(StorageManager.get('products_invoice')[0].name, 'SP Hóa Đơn');
 
-   // 2. Kiểm tra BroadcastChannel 'document_channel' và Controller sync
+   // Executes documented symbol logic in frontend-refactoring.test.mjs.
    const Controller = loadEsModuleClass('src/assets/scripts/Controllers/controller.js', {
       BroadcastBus,
       TextHelper,
@@ -220,11 +216,12 @@ test('O3: Thực thi runtime Frontend JS kiểm chứng App.init() parse meta#pa
    assert.equal(broadcastMessages.length, 1);
    assert.equal(broadcastMessages[0].channel, 'document_channel');
 
-   // 3. Kiểm tra App, AdminLoadController và WooCommerceController chỉ đọc meta#pagenow 1 lần tại App.init()
+   // Executes documented symbol logic in frontend-refactoring.test.mjs.
    const loadedModules = [];
    let AdminLoadControllerClass;
    let WooCommerceControllerClass;
    const mockModuleLoader = {
+      // Defines load method behavior for frontend-refactoring.test.mjs.
       async load(modulePath, data) {
          loadedModules.push({ modulePath, data });
          if (modulePath === 'Admin/adminLoadController') {

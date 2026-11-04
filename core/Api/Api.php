@@ -1,4 +1,6 @@
 <?php
+// Provides module declarations and business logic for Api.php.
+
 
 namespace App\Api;
 
@@ -11,6 +13,7 @@ if (!defined('ABSPATH')) {
    exit;
 }
 
+// Defines Api class behavior for Api.php.
 class Api {
 
    /**
@@ -35,16 +38,7 @@ class Api {
       return true;
    }
 
-   /**
-    * Helper chuẩn hóa phản hồi thành công theo cấu trúc status.{code, message, data}.
-    *
-    * @param mixed    $data       Dữ liệu trả về trong status.data.
-    * @param string   $message    Thông báo trạng thái.
-    * @param int      $statusCode Mã trạng thái trong status.code (mặc định 200).
-    * @param int|null $httpStatus Mã HTTP response (mặc định lấy theo $statusCode).
-    * @param bool     $includeData Có đưa trường 'data' vào status hay không.
-    * @return WP_REST_Response
-    */
+   /* Executes documented symbol logic in Api.php. */
    protected function sendSuccess($data = null, $message = 'Thành công.', $statusCode = 200, $httpStatus = null, $includeData = true) {
       $httpStatus = $httpStatus ?? $statusCode;
       $statusPayload = [
@@ -61,15 +55,7 @@ class Api {
       ], $httpStatus);
    }
 
-   /**
-    * Helper chuẩn hóa phản hồi lỗi WP_Error.
-    *
-    * @param string $code    Mã lỗi định danh.
-    * @param string $message Thông báo lỗi.
-    * @param int    $status  Mã trạng thái HTTP (mặc định 400).
-    * @param mixed  $details Chi tiết lỗi bổ sung (tùy chọn).
-    * @return WP_Error
-    */
+   /* Executes documented symbol logic in Api.php. */
    protected function sendError($code, $message, $status = 400, $details = null) {
       $errorData = ['status' => $status];
       if (!is_null($details)) {
@@ -78,14 +64,7 @@ class Api {
       return new WP_Error($code, $message, $errorData);
    }
 
-   /**
-    * Helper kiểm tra xác thực JWT kết hợp capability của WordPress.
-    *
-    * @param WP_REST_Request $request
-    * @param string|null     $capability
-    * @param string          $forbiddenMessage
-    * @return bool|WP_Error
-    */
+   /* Executes documented symbol logic in Api.php. */
    protected function checkJwtAndCapability(WP_REST_Request $request, $capability = null, $forbiddenMessage = 'Bạn không có quyền thực hiện thao tác này.') {
       $authenticated = JwtAuthenticate::JwtAuthenticate($request);
       if (is_wp_error($authenticated)) {
@@ -102,11 +81,7 @@ class Api {
       return true;
    }
 
-   /**
-    * Helper function để định nghĩa các tham số cho việc lấy danh sách (collection).
-    *
-    * @return array
-    */
+   /* Executes documented symbol logic in Api.php. */
    public function getCollectionParams() {
       return [
          'page' => [

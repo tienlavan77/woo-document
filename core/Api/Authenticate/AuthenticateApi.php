@@ -1,4 +1,6 @@
 <?php
+// Provides module declarations and business logic for AuthenticateApi.php.
+
 
 namespace App\Api\Authenticate;
 
@@ -11,6 +13,7 @@ if (!defined('ABSPATH')) {
    exit;
 }
 
+// Defines AuthenticateApi class behavior for AuthenticateApi.php.
 class AuthenticateApi extends Api {
 
    protected static $instance;
@@ -27,11 +30,13 @@ class AuthenticateApi extends Api {
       return self::$instance;
    }
 
+   // Defines __construct method behavior for AuthenticateApi.php.
    public function __construct() {
       self::$instance = $this;
       parent::__construct();
    }
 
+   // Defines routesRegister method behavior for AuthenticateApi.php.
    public function routesRegister() {
       register_rest_route(
          self::$namespace,
@@ -46,6 +51,7 @@ class AuthenticateApi extends Api {
       );
    }
 
+   // Defines authenticateLogin method behavior for AuthenticateApi.php.
    public function authenticateLogin(WP_REST_Request $request) {
       $username = trim((string) $request->get_param('username'));
       $password = trim((string) $request->get_param('password'));
@@ -54,7 +60,7 @@ class AuthenticateApi extends Api {
          return $this->sendSuccess(null, 'Vui lòng cung cấp đầy đủ tài khoản và mật khẩu.', 400, 400, false);
       }
 
-      // Sử dụng cơ chế xác thực gốc bảo mật của WordPress
+      // Executes documented symbol logic in AuthenticateApi.php.
       $creds = [
          'user_login'    => $username,
          'user_password' => $password,

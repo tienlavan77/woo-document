@@ -1,13 +1,17 @@
 <?php
+// Provides module declarations and business logic for JwtController.php.
+
 namespace App\Controllers\Authenticate;
 
 use Firebase\JWT\JWT;
 use DateTimeImmutable;
 use Exception;
 
+// Defines JwtController class behavior for JwtController.php.
 class JwtController {
    protected static $instance;
    private $directto;
+   // Defines get_instance method behavior for JwtController.php.
    public static function get_instance() {
       if (is_null(self::$instance)) {
           self::$instance = new self();
@@ -15,16 +19,18 @@ class JwtController {
       return self::$instance;
    }
 
+   // Defines __construct method behavior for JwtController.php.
    public function __construct() {
      
    }
  
+   // Defines createJWTToken method behavior for JwtController.php.
    public static function createJWTToken($user) {        
       
       try {
          $date = new DateTimeImmutable();
          $issued_at = $date->getTimestamp();
-         // SỬA ĐỔI BẢO MẬT: Đặt thời gian hết hạn (ví dụ: 1 ngày)
+         // Executes documented symbol logic in JwtController.php.
          $expire_at = $date->modify('+30 day')->getTimestamp(); 
          
          $userName = $user->user_login;  
@@ -39,12 +45,12 @@ class JwtController {
              'role' => $role,           
          ];
          
-         // BẢO MẬT: Tránh đưa 'user_pass' (hash) vào payload
+         // Executes documented symbol logic in JwtController.php.
          
-         // SỬ DỤNG SECRET_KEY CỦA WP HOẶC MỘT KEY KHÁC CỰC KỲ MẠNH
+         // Executes documented symbol logic in JwtController.php.
          $jwt = JWT::encode( $payload, SECRET_KEY_DOCUMENT , 'HS256'); 
       } catch (Exception $e) {
-         // Log lỗi
+         // Executes documented symbol logic in JwtController.php.
          error_log("Error creating JWT: " . $e->getMessage());
          throw new Exception("Could not create JWT."); // Ném ngoại lệ để xử lý ở tầng trên
       }

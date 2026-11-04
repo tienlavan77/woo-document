@@ -1,4 +1,6 @@
 <?php
+// Provides module declarations and business logic for TemplatesApi.php.
+
 
 namespace App\Api\Templates;
 
@@ -10,13 +12,12 @@ if (!defined('ABSPATH')) {
    exit;
 }
 
+// Defines TemplatesApi class behavior for TemplatesApi.php.
 class TemplatesApi extends Api {
-   // Lưu trữ instance duy nhất của class (Mô hình Singleton)
+   // Executes documented symbol logic in TemplatesApi.php.
    protected static $instance;
 
-   /**
-    * Khởi tạo hoặc lấy ra instance duy nhất của TemplatesApi
-    */
+   /* Executes documented symbol logic in TemplatesApi.php. */
    public static function get_instance() {
       if (is_null(self::$instance)) {
          self::$instance = new self();
@@ -24,16 +25,13 @@ class TemplatesApi extends Api {
       return self::$instance;
    }
 
+   // Defines __construct method behavior for TemplatesApi.php.
    public function __construct() {
       self::$instance = $this;
       parent::__construct();
    }
 
-   /**
-    * ĐĂNG KÝ CÁC ĐƯỜNG DẪN API (ROUTES)
-    * TỐI ƯU: Gộp 3 endpoint cũ thành 1 endpoint động duy nhất bằng Regular Expression (Regex)
-    * URL mẫu: /wp-json/tinsinhphat/v1/template/deliveries/mau-don-hang
-    */
+   /* Executes documented symbol logic in TemplatesApi.php. */
    public function routesRegister() {
       register_rest_route(
          self::$namespace,
@@ -48,15 +46,12 @@ class TemplatesApi extends Api {
       );
    }
 
-   /**
-    * Hàm điều hướng và xử lý Request lấy dữ liệu Template
-    * @param WP_REST_Request $request Đối tượng chứa toàn bộ thông tin Client gửi lên
-    */
+   /* Executes documented symbol logic in TemplatesApi.php. */
    public function handleGetTemplate(WP_REST_Request $request) {
       $type_param = $request->get_param('type');
       $slug       = $request->get_param('slug');
 
-      // Mảng ánh xạ (Mapping) từ tên trên URL sang tên thư mục thực tế trong source code
+      // Executes documented symbol logic in TemplatesApi.php.
       $type_mapping = [
          'deliveries' => 'delivery',
          'quotations' => 'quotation',
@@ -69,13 +64,9 @@ class TemplatesApi extends Api {
       return $this->getTemplate($slug, $folder);
    }
 
-   /**
-    * Đọc file HTML từ ổ cứng và chuẩn hóa dữ liệu trả về cho Client
-    * @param string $slug Tên file template (không bao gồm đuôi file)
-    * @param string $type Tên thư mục chứa file
-    */
+   /* Executes documented symbol logic in TemplatesApi.php. */
    public function getTemplate($slug, $type) {
-      // Bảo mật: Đảm bảo slug không chứa các ký tự điều hướng đường dẫn (../)
+      // Executes documented symbol logic in TemplatesApi.php.
       $slug = basename($slug);
       $template = $type === ''
          ? sprintf("%s/%s.html", TEMPLATES_DIR_DOCUMENT, $slug)

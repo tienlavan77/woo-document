@@ -1,4 +1,6 @@
 <?php
+// Provides module declarations and business logic for ProductController.php.
+
 
 namespace App\Controllers\Woocommerce\Product;
 
@@ -10,13 +12,12 @@ if (!defined('ABSPATH')) {
    exit;
 }
 
+// Defines ProductController class behavior for ProductController.php.
 class ProductController {
    protected static $instance;
    private $hooks;
 
-   /**
-    * Khởi tạo 1 class
-    */
+   /* Executes documented symbol logic in ProductController.php. */
    public static function get_instance(?HookManager $hooks = null) {
       if (is_null(self::$instance)) {
          self::$instance = new self($hooks);
@@ -24,6 +25,7 @@ class ProductController {
       return self::$instance;
    }
 
+   // Defines __construct method behavior for ProductController.php.
    public function __construct(?HookManager $hooks = null) {
       $this->hooks = $hooks ?? new HookManager();
       self::$instance = $this;
@@ -34,7 +36,7 @@ class ProductController {
       ProductModel::init();
    }
 
-   // method lưu đơn vị tính và tên trong hoá đơn của sản phẩm
+   // Executes documented symbol logic in ProductController.php.
    public function saveCostPriceSingleProduct($product_id) {
       if (wp_verify_nonce(isset($_POST['_inline_edit']), 'inlineeditnonce'))
          return;

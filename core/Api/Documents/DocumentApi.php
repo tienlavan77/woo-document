@@ -1,4 +1,6 @@
 <?php
+// Provides module declarations and business logic for DocumentApi.php.
+
 
 namespace App\Api\Documents;
 
@@ -12,11 +14,13 @@ if (!defined('ABSPATH')) {
    exit;
 }
 
+// Defines DocumentApi class behavior for DocumentApi.php.
 class DocumentApi extends Api {
 
    protected static $instance;
    protected $controller;
 
+   // Defines get_instance method behavior for DocumentApi.php.
    public static function get_instance(?DocumentController $controller = null, ?HookManager $hooks = null) {
       if (is_null(self::$instance)) {
          self::$instance = new self($controller, $hooks);
@@ -24,11 +28,13 @@ class DocumentApi extends Api {
       return self::$instance;
    }
 
+   // Defines __construct method behavior for DocumentApi.php.
    public function __construct(?DocumentController $controller = null, ?HookManager $hooks = null) {
       $this->controller = $controller ?? DocumentController::get_instance($hooks);
       parent::__construct();
    }
 
+   // Defines routesRegister method behavior for DocumentApi.php.
    public function routesRegister() {
       register_rest_route(
          self::$namespace,
@@ -103,6 +109,17 @@ class DocumentApi extends Api {
          ]
       );
 
+      register_rest_route(
+         self::$namespace,
+         '/documents/thumbnail/(?P<slug>[^/]+)',
+         [
+            [
+               'methods'             => \WP_REST_Server::READABLE,
+               'callback'            => [$this->controller, 'handleThumbnailFile'],
+               'permission_callback' => [JwtAuthenticate::class, 'JwtAuthenticate']
+            ]
+         ]
+      );
       register_rest_route(
          self::$namespace,
          '/documents/upload',

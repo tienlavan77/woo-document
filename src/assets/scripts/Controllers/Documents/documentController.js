@@ -1,3 +1,5 @@
+// Provides module declarations and business logic for documentController.js.
+
 import Controller from '../controller.js'
 import DocumentModel from '../../Models/Documents/documentModel.js';
 import DocumentViewer from '../../Views/Documents/documentViewer.js';
@@ -5,295 +7,178 @@ import TextHelper from '../../Vendor/helpers/textHelper.js';
 import TagBuilder from '../../Vendor/helpers/tagBuilder.js';
 import { FILE_PDF_ICON } from '../../Vendor/dragdropfile/filesSVGIcon.js';
 
+// Defines DocumentController class behavior for documentController.js.
 export default class DocumentController extends Controller {
+   // Defines constructor method behavior for documentController.js.
    constructor() {
       super();
       this.viewer = new DocumentViewer();
       this.model = new DocumentModel();
-      this.filesLoaded = false; // Tránh gọi API lấy danh sách file nhiều lần khi đóng/mở modal
-      this.currentPage = 1;      // Theo dõi vị trí phân trang của trình quản lý file
+      this.filesLoaded = false;
+      this.currentPage = 1;
       this.documentPreviewCache = new Map();
       this.documentPreviewRequests = new Map();
       this.init();
    }
 
-   /**
-    * Khởi tạo các sự kiện và dữ liệu ban đầu
-    */
+   /* Executes documented symbol logic in documentController.js. */
    async init() {
-       await this.model.init()
-      // xác định phần từ #pagenow để quyết định phương án xử lý
+      await this.model.init();
       const pagenow = document.querySelector('#pagenow');
-      if (!pagenow) {
-         if (import.meta.env.DEV) console.warn("DocumentController: Không tìm thấy phần tử #pagenow để xác định trang hiện tại.");
-         return;
-      }
-
+      if (!pagenow) return;
       const { page, type } = JSON.parse(pagenow.dataset.page);
-
-      // 2. Tạo key để định danh controller (Ví dụ: "edit" + "Product" = "editProduct")
-      // Lưu ý: Sử dụng TextHelper để chuẩn hóa string nếu cần
       const controllerKey = `${page}${TextHelper.capitalize(type)}Init`;
-      console.log(`DocumentController: Xác định controller key là "${controllerKey}"`);
-      // 3. Gọi hàm khởi tạo tương ứng nếu tồn tại
-      if (typeof this[controllerKey] === 'function') {
-         await this[controllerKey]();
-      } else {
-         if (import.meta.env.DEV) console.warn(`DocumentController: Không tìm thấy phương thức khởi tạo cho key "${controllerKey}".`);
-      }
-
+      if (typeof this[controllerKey] === 'function') await this[controllerKey]();
    }
 
+   // Defines editOrderInit method behavior for documentController.js.
    editOrderInit() {
-      // Logic khởi tạo cho trang postOrder
-      let thelist = document.querySelector('#the-list');
-      if (!thelist) {
-         if (import.meta.env.DEV) console.warn("DocumentController: Không tìm thấy phần tử #the-list để gắn sự kiện.");
-         return;
-      }
-      this._addEventListenerToDocumentActions(thelist); // Gắn sự kiện click cho các hành động liên quan đến tài liệu
+      const thelist = document.querySelector('#the-list');
+      if (thelist) this._addEventListenerToDocumentActions(thelist);
    }
 
+   // Defines postOrderInit method behavior for documentController.js.
    async postOrderInit() {
       this.orderId = this._getCurrentOrderId();
       if (!this.orderId) return;
-
       const response = await this.model.getOrderDocuments(this.orderId);
       if (response?.status?.code !== 200) return;
-
       this.orderDocuments = response.status.data.documents || {};
       this._renderOrderDocumentCards();
    }
 
+   // Defines _getCurrentOrderId method behavior for documentController.js.
    _getCurrentOrderId() {
-      const postId = document.querySelector('#post_ID')?.value;
-      const queryId = new URLSearchParams(window.location.search).get('post');
-      const orderId = parseInt(postId || queryId || '', 10);
+      const orderId = parseInt(document.querySelector('#post_ID')?.value || new URLSearchParams(window.location.search).get('post') || '', 10);
       return Number.isInteger(orderId) && orderId > 0 ? orderId : null;
    }
 
+   /* Executes documented symbol logic in documentController.js. */
+   _getNormalizedFiles(documentData) {
+      return Array.isArray(documentData?.files) ? documentData.files.filter(Boolean) : (documentData?.file ? [documentData.file] : []);
+   }
+
+   // Defines _renderOrderDocumentCards method behavior for documentController.js.
    _renderOrderDocumentCards() {
       const mount = this._getOrderDocumentMount();
       if (!mount) return;
-
       const { host, anchor } = mount;
       host.classList.add('tsp-order-data-host');
-
       let cards = host.querySelector('.tsp-order-document-cards');
       if (!cards) {
-         cards = document.createElement('div');
-         cards.className = 'tsp-order-document-cards';
+         cards = TagBuilder.create('div').setAttributes({ className: 'tsp-order-document-cards' }).build();
          cards.addEventListener('click', (event) => this._handleOrderDocumentClick(event));
-
-         if (anchor) {
-            anchor.insertAdjacentElement('afterend', cards);
-         } else {
-            host.appendChild(cards);
-         }
+         if (anchor) anchor.insertAdjacentElement('afterend', cards); else host.appendChild(cards);
       }
 
       cards.innerHTML = '';
       Object.entries(this.orderDocuments || {}).forEach(([type, documentData]) => {
-         const file = documentData.file || '';
-         const card = TagBuilder.create('div').setAttributes({
-            className: `tsp-order-document-card ${file ? 'has-file' : 'is-empty'}`,
-            'data-document-type': type,
-         }).build();
-         const title = TagBuilder.create('span').setAttributes({ className: 'tsp-order-document-title' })
-            .text(documentData.title).build();
-         const trigger = TagBuilder.create('button').setAttributes({
-            type: 'button',
-            className: 'tsp-order-document-trigger',
-            'data-action': file ? 'previewDocument' : 'uploadDocument',
-            'aria-label': `${file ? 'Mở' : 'Tải'} ${documentData.title}`,
-         }).build();
-
-         if (file) {
-            const icon = TagBuilder.create('span').setAttributes({
-               className: 'tsp-order-document-icon is-pdf',
-               'aria-hidden': 'true',
-            }).html(FILE_PDF_ICON).build();
-            const filename = TagBuilder.create('span').setAttributes({ className: 'tsp-order-document-file' })
-               .text(file.split('/').pop()).build();
-            trigger.append(icon, filename);
-         } else {
-            const plusBox = TagBuilder.create('span').setAttributes({
-               className: 'tsp-order-document-plus-box',
-               'aria-hidden': 'true',
-            }).append([
-               TagBuilder.create('span').setAttributes({ className: 'dashicons dashicons-plus-alt2' }).build()
-            ]).build();
-            trigger.append(plusBox);
-         }
-
-         card.append(title, trigger);
-         cards.appendChild(card);
+         const files = this._getNormalizedFiles(documentData);
+         documentData.files = files;
+         documentData.file = files[0] || '';
+         const isMulti = Boolean(documentData.multiple || type === 'delivery' || documentData.name === 'deliveryDocument');
+         cards.appendChild(this.viewer.renderDocumentSingle(type, documentData, files, isMulti));
       });
    }
 
+   // Defines _getOrderDocumentMount method behavior for documentController.js.
    _getOrderDocumentMount() {
       const orderData = document.querySelector('#order_data.woocommerce-order-data, #woocommerce-order-data, .woocommerce-order-data');
-      const customerField = orderData?.querySelector('#customer_user')?.closest('.wc-customer-user, .form-field')
-         || document.querySelector('#customer_user')?.closest('.wc-customer-user, .form-field');
-
-      if (customerField) {
-         return {
-            host: customerField.closest('.order_data_column') || customerField.parentElement,
-            anchor: customerField,
-         };
-      }
-
-      // Fallback cho markup WooCommerce cũ hoặc custom order screen.
+      const customerField = orderData?.querySelector('#customer_user')?.closest('.wc-customer-user, .form-field') || document.querySelector('#customer_user')?.closest('.wc-customer-user, .form-field');
+      if (customerField) return { host: customerField.closest('.order_data_column') || customerField.parentElement, anchor: customerField };
       const totalsTable = document.querySelector('.wc-order-totals');
-      if (!totalsTable) return null;
-
-      return {
-         host: totalsTable.closest('.wc-order-data-row') || totalsTable.parentElement,
-         anchor: null,
-      };
+      return totalsTable ? { host: totalsTable.closest('.wc-order-data-row') || totalsTable.parentElement, anchor: null } : null;
    }
 
+   // Defines _handleOrderDocumentClick method behavior for documentController.js.
    _handleOrderDocumentClick(event) {
-      const target = event.target.closest('.tsp-order-document-trigger');
-      if (!target) return;
-
-      const type = target.closest('.tsp-order-document-card')?.dataset.documentType;
-      const documentData = this.orderDocuments?.[type];
-      if (!documentData) return;
-
-      event.preventDefault();
-      this.handleDocumentLinks(target, {
-         ID: this.orderId,
-         name: documentData.name,
-         title: documentData.title,
-         file: documentData.file || '',
-         type,
-      });
-   }
-
-   /**
-    * Sử dụng Event Delegation để lắng nghe các hành động trên danh sách đơn hàng
-    * @param {HTMLElement} thelist - Phần tử cha chứa danh sách đơn hàng
-    * @private
-    */
-   _addEventListenerToDocumentActions(thelist) {
-         thelist.addEventListener('click', (e) => {
-         // Sử dụng Event Delegation để bắt các hành động sinh ra động (nút xóa, tên file mới)
-         const actionTarget = e.target.closest('.uploadToDocument') || e.target.closest('.delete__button');
-
-         if (actionTarget) {
-            e.preventDefault();
-            const parent = actionTarget.closest('.order--document');
-            let dataDocument = parent.document || JSON.parse(parent.dataset.document);
-            if (! parent.document) {
-               parent.document = dataDocument; // Lưu dữ liệu vào thuộc tính tùy chỉnh của phần tử
-               delete parent.dataset.document; // Xóa dataset sau khi đã lưu dữ liệu vào thuộc tính tùy chỉnh
-            }
-            this.handleDocumentLinks(actionTarget, dataDocument);
-         }
-      });
-   }
-
-   /**
-    * Dispatcher: Điều phối hành động dựa trên thuộc tính data-action của phần tử HTML
-    * @param {HTMLElement} target - Phần tử HTML kích hoạt sự kiện
-    * @param {Object} documentData - Dữ liệu tài liệu gắn liền với dòng đơn hàng
-    */
-   handleDocumentLinks( target, documentData) {
-      // Ánh xạ chuỗi action (vd: previewDocument) thành việc gọi phương thức tương ứng trong class
-      // Logic để hiển thị tài liệu dựa trên documentData
-      let action = target.dataset.action;
-      if (this[action]) {
-         this[action](target, documentData);
-      } else {
-         if (import.meta.env.DEV) console.warn(`[DocumentController] Action "${action}" not found.`);
+      const navBtn = event.target.closest('[data-slide-dir]');
+      if (navBtn) {
+         event.preventDefault();
+         event.stopPropagation();
+         const card = navBtn.closest('.tsp-order-document-card');
+         if (card) this.viewer.moveOrderDocumentSlide(card, parseInt(navBtn.dataset.slideDir, 10) || 0);
+         return;
       }
+      const target = event.target.closest('[data-action]');
+      const type = target?.closest('.tsp-order-document-card')?.dataset.documentType;
+      const documentData = this.orderDocuments?.[type];
+      if (!target || !documentData) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const targetFile = target.dataset.file || documentData.file || '';
+      this.handleDocumentLinks(target, { ID: this.orderId, name: documentData.name, title: documentData.title, file: targetFile, files: this._getNormalizedFiles(documentData), multiple: Boolean(documentData.multiple || type === 'delivery'), type });
    }
 
-   /**
-    * Xử lý xóa tài liệu gắn liền với đơn hàng
-    */
-   async deleteDocument(target, documentData, options = {}) { // Đồng bộ tên hàm với data-action="deleteDocument"
-      const typeMap = {
-         vatDocument: 'invoice',
-         orderDocument: 'quotation',
-         deliveryDocument: 'delivery'
-      };
-
-      this.viewer.showNotice('Đang gỡ tài liệu...', 'info');
-      const res = await this.model.unassignDocument({
-         order_ids: [documentData.ID],
-         doc_type: typeMap[documentData.name] || documentData.name
+   // Defines _addEventListenerToDocumentActions method behavior for documentController.js.
+   _addEventListenerToDocumentActions(thelist) {
+      thelist.addEventListener('click', (e) => {
+         const actionTarget = e.target.closest('.uploadToDocument') || e.target.closest('.delete__button');
+         if (!actionTarget) return;
+         e.preventDefault();
+         const parent = actionTarget.closest('.order--document');
+         const dataDocument = parent.document || JSON.parse(parent.dataset.document);
+         if (!parent.document) { parent.document = dataDocument; delete parent.dataset.document; }
+         this.handleDocumentLinks(actionTarget, { ...dataDocument, file: actionTarget.dataset.file || dataDocument.file || '' });
       });
+   }
+
+   // Defines handleDocumentLinks method behavior for documentController.js.
+   handleDocumentLinks(target, documentData) {
+      const action = target.dataset.action;
+      if (this[action]) this[action](target, documentData);
+   }
+
+   // Defines deleteDocument method behavior for documentController.js.
+   async deleteDocument(target, documentData, options = {}) {
+      const typeMap = { vatDocument: 'invoice', orderDocument: 'quotation', deliveryDocument: 'delivery' };
+      const targetFile = target?.dataset?.file || documentData.file || '';
+      this.viewer.showNotice('Đang gỡ tài liệu...', 'info');
+      const res = await this.model.unassignDocument({ order_ids: [documentData.ID], doc_type: typeMap[documentData.name] || documentData.name, relative_path: targetFile });
 
       if (res?.status?.code === 200) {
          this.viewer.showNotice('Đã gỡ tài liệu thành công!', 'success');
-         this._clearDocumentPreviewCache(documentData.file);
-         this.viewer.modal.close();
-         this.viewer.resetOrderRow(documentData.ID, documentData.name);
-         this._resetOrderDocumentCard(documentData.name);
-         if (options.openUpload) {
-            await this.uploadDocument(null, { ...documentData, file: '' });
-         }
+         if (targetFile) this._clearDocumentPreviewCache(targetFile);
+         this.viewer.modal?.close?.();
+         this.viewer.resetOrderRow(documentData.ID, documentData.name, targetFile);
+         this._resetOrderDocumentCard(documentData.name, targetFile);
+         if (options.openUpload) await this.uploadDocument(null, { ...documentData, file: '' });
       } else {
          this.viewer.showNotice(res?.status?.message || 'Không thể gỡ tài liệu lúc này.', 'error');
       }
    }
 
-   /**
-    * Xử lý hiển thị Modal Upload và Quản lý file
-    * @param {HTMLElement} target - Nút bấm kích hoạt
-    * @param {Object} documentData - Thông tin đơn hàng mục tiêu
-    */
+   // Defines uploadDocument method behavior for documentController.js.
    async uploadDocument(target, documentData) {
-      let listOrders = this._getOrdersNoDocument(documentData);
+      const listOrders = this._getOrdersNoDocument(documentData);
+      const isMulti = Boolean(documentData.multiple || documentData.name === 'deliveryDocument' || documentData.type === 'delivery');
 
-      // Đăng ký các "lời hứa" (callbacks) để Viewer thực thi khi có sự kiện từ phía người dùng
-      // Điều này giữ cho Viewer hoàn toàn "ngu ngơ" về logic nghiệp vụ, chỉ biết báo cáo sự kiện lên Controller
       this.viewer.showUploadModal(documentData, listOrders.list, {
          onConfirm: async (orderIds) => {
-            await this._handleAssign(this.viewer.selectedFilePath, orderIds, documentData.name);
+            const selected = isMulti ? (this.viewer.selectedFilePaths?.length ? this.viewer.selectedFilePaths : [this.viewer.selectedFilePath].filter(Boolean)) : this.viewer.selectedFilePath;
+            await this._handleAssign(selected, orderIds, documentData.name);
          },
-         onLoadMore: async () => {
-            this.currentPage++;
-            await this._loadFilesToManager(true);
-         },
+         onLoadMore: async () => { this.currentPage++; await this._loadFilesToManager(true); },
          onAutoUpload: async (file) => {
             this.viewer.showNotice('Đang tự động tải file lên...', 'info');
             const res = await this.model.uploadFile(file);
-            if (res?.status?.code === 200) {
-               this.viewer.showNotice('Tải lên thành công!', 'success');
-               this.viewer.prependFile(res.status.data);
-            } else {
-               this.viewer.showNotice(res?.status?.message || 'Lỗi tải file', 'error');
-            }
+            if (res?.status?.code === 200) { this.viewer.showNotice('Tải lên thành công!', 'success'); this.viewer.prependFile(res.status.data); }
+            else this.viewer.showNotice(res?.status?.message || 'Lỗi tải file', 'error');
          },
          deleteFile: async (path, file, selectedFile) => {
-            this.viewer.showNotice(`Xoá file ${file}`, 'info')
+            this.viewer.showNotice(`Xoá file ${file}`, 'info');
             const res = await this.model.deleteFile(path);
-             if (res?.status?.code === 200) {
-               this.viewer.showNotice('Xoá file thành công!', 'success');
-               this._clearDocumentPreviewCache(path);
-               selectedFile.remove()
-            } else {
-               this.viewer.showNotice(res?.status?.message || 'Lỗi tải file', 'error');
-            }
+            if (res?.status?.code === 200) { this.viewer.showNotice('Xoá file thành công!', 'success'); this._clearDocumentPreviewCache(path); selectedFile.remove(); }
+            else this.viewer.showNotice(res?.status?.message || 'Lỗi tải file', 'error');
          }
-      }, {
-         singleOrder: Boolean(this.orderId)
-      });
+      }, { singleOrder: Boolean(this.orderId), multiple: isMulti });
 
-      // Mỗi lần mở modal tải lại trang đầu để nhận file mới nhất từ cả hai thư mục.
       this.currentPage = 1;
       this.filesLoaded = false;
       await this._loadFilesToManager();
    }
 
-   /**
-    * Tải danh sách file từ server và yêu cầu Viewer hiển thị lên Grid
-    * @param {boolean} append - Nếu true sẽ nối thêm dữ liệu, false sẽ làm mới Grid
-    * @private
-    */
+   // Defines _loadFilesToManager method behavior for documentController.js.
    async _loadFilesToManager(append = false) {
       const res = await this.model.getFiles(this.currentPage, 12);
       if (res?.status?.code === 200) {
@@ -303,27 +188,11 @@ export default class DocumentController extends Controller {
       }
    }
 
-   /**
-    * Thực hiện yêu cầu gán tài liệu cho các đơn hàng qua API
-    * @param {string} relativePath - Đường dẫn tương đối của file
-    * @param {number[]} orderIds - Danh sách ID đơn hàng cần gán
-    * @param {string} docName - Loại tài liệu (orderDocument, vatDocument...)
-    * @private
-    */
+   // Defines _handleAssign method behavior for documentController.js.
    async _handleAssign(relativePath, orderIds, docName) {
-      // Ánh xạ tên thuộc tính từ UI sang định dạng DocType mà API yêu cầu
-      const typeMap = {
-         vatDocument: 'invoice',
-         orderDocument: 'quotation',
-         deliveryDocument: 'delivery'
-      };
-
+      const typeMap = { vatDocument: 'invoice', orderDocument: 'quotation', deliveryDocument: 'delivery' };
       this.viewer.showNotice('Đang gán tài liệu...', 'info');
-      const res = await this.model.assignDocument({
-         relative_path: relativePath,
-         order_ids: orderIds,
-         doc_type: typeMap[docName] || docName
-      });
+      const res = await this.model.assignDocument({ relative_path: relativePath, order_ids: orderIds, doc_type: typeMap[docName] || docName });
 
       if (res?.status?.code === 200) {
          this.viewer.showNotice('Gán tài liệu thành công!', 'success');
@@ -335,41 +204,30 @@ export default class DocumentController extends Controller {
       }
    }
 
-   /**
-    * Xử lý xem trước tài liệu PDF trong Modal
-    * @param {HTMLElement} target - Nút bấm kích hoạt
-    * @param {Object} documentData - Dữ liệu chứa thông tin file
-    */
+   // Defines previewDocument method behavior for documentController.js.
    async previewDocument(target, documentData) {
-      // Thêm hiệu ứng loading cho icon/button (giả sử dùng class CSS 'is-loading')
+      const targetFile = target?.dataset?.file || documentData.file;
+      if (!targetFile) return;
+      Object.assign(target.style, { opacity: '0.5', pointerEvents: 'none' });
       target.classList.add('is-loading');
-      target.style.opacity = '0.5';
-      target.style.pointerEvents = 'none';
 
-      // Lấy metadata trước để server chuẩn hóa đường dẫn file.
-      const response = await this.model.getFileDetail(documentData.file);
-
+      const response = await this.model.getFileDetail(targetFile);
+      Object.assign(target.style, { opacity: '1', pointerEvents: 'auto' });
       target.classList.remove('is-loading');
-      target.style.opacity = '1';
-      target.style.pointerEvents = 'auto';
 
-      if (response && response.status && response.status.code === 200) {
-         const fileInfo = response.status.data;
-         // Fetch có Authorization rồi nhúng Blob URL vì PDFObject không gửi custom header.
+      if (response?.status?.code === 200) {
          try {
-            const securedUrl = await this._getDocumentPreviewUrl(fileInfo);
-            this.viewer.showPreviewModal(documentData, securedUrl, {
-               onRemove: () => this.deleteDocument(null, documentData, { openUpload: true })
+            const securedUrl = await this._getDocumentPreviewUrl(response.status.data);
+            this.viewer.showPreviewModal({ ...documentData, file: targetFile }, securedUrl, {
+               onRemove: () => this.deleteDocument(null, { ...documentData, file: targetFile }, { openUpload: true })
             });
          } catch (error) {
-            if (import.meta.env.DEV) console.error('Không thể tải nội dung PDF:', error);
             this.viewer.showNotice(error.message || 'Không thể tải tài liệu.', 'error');
          }
-      } else {
-         if (import.meta.env.DEV) console.error("Không thể lấy thông tin file:", response?.status?.message || "Lỗi không xác định");
       }
    }
 
+   // Defines _getDocumentPreviewUrl method behavior for documentController.js.
    async _getDocumentPreviewUrl(fileInfo) {
       const path = fileInfo.relative_path;
       const cacheKey = `${path}|${fileInfo.timestamp || ''}`;
@@ -381,63 +239,55 @@ export default class DocumentController extends Controller {
          this.documentPreviewCache.set(cacheKey, url);
          this.documentPreviewRequests.delete(cacheKey);
          return url;
-      }).catch((error) => {
-         this.documentPreviewRequests.delete(cacheKey);
-         throw error;
-      });
+      }).catch((error) => { this.documentPreviewRequests.delete(cacheKey); throw error; });
       this.documentPreviewRequests.set(cacheKey, request);
       return request;
    }
 
+   // Defines _clearDocumentPreviewCache method behavior for documentController.js.
    _clearDocumentPreviewCache(path) {
-      [...this.documentPreviewCache.entries()]
-         .filter(([key]) => key.startsWith(`${path}|`))
-         .forEach(([key, url]) => {
-            URL.revokeObjectURL(url);
-            this.documentPreviewCache.delete(key);
-         });
+      [...this.documentPreviewCache.entries()].filter(([key]) => key.startsWith(`${path}|`)).forEach(([key, url]) => {
+         URL.revokeObjectURL(url);
+         this.documentPreviewCache.delete(key);
+      });
       this.model.clearFileCache(path);
    }
 
+   // Defines _updateOrderDocumentCard method behavior for documentController.js.
    _updateOrderDocumentCard(relativePath, docName) {
       if (!this.orderDocuments || !this.orderId) return;
       const type = Object.keys(this.orderDocuments).find((key) => this.orderDocuments[key].name === docName);
       if (!type) return;
-      this.orderDocuments[type].file = relativePath;
+      const incoming = (Array.isArray(relativePath) ? relativePath : [relativePath]).filter(Boolean);
+      const isMulti = Boolean(this.orderDocuments[type].multiple || type === 'delivery' || docName === 'deliveryDocument');
+      const current = this._getNormalizedFiles(this.orderDocuments[type]);
+      const nextFiles = isMulti ? [...new Set([...current, ...incoming])] : [incoming[0] || ''].filter(Boolean);
+      this.orderDocuments[type].files = nextFiles;
+      this.orderDocuments[type].file = nextFiles[0] || '';
       this._renderOrderDocumentCards();
    }
 
-   _resetOrderDocumentCard(docName) {
+   // Defines _resetOrderDocumentCard method behavior for documentController.js.
+   _resetOrderDocumentCard(docName, removedPath = '') {
       if (!this.orderDocuments || !this.orderId) return;
       const type = Object.keys(this.orderDocuments).find((key) => this.orderDocuments[key].name === docName);
       if (!type) return;
-      this.orderDocuments[type].file = '';
+      const current = this._getNormalizedFiles(this.orderDocuments[type]);
+      const nextFiles = removedPath ? current.filter((f) => f !== removedPath) : [];
+      this.orderDocuments[type].files = nextFiles;
+      this.orderDocuments[type].file = nextFiles[0] || '';
       this._renderOrderDocumentCards();
    }
 
-   /**
-    * Lọc danh sách các đơn hàng chưa có tài liệu cùng loại trên giao diện hiện tại
-    * @param {Object} documentData - Dữ liệu của đơn hàng đang được click
-    * @returns {Object} { idClick: number, list: number[] }
-    * @private
-    */
+   // Defines _getOrdersNoDocument method behavior for documentController.js.
    _getOrdersNoDocument(documentData) {
-      // Logic để lấy tất cả các đơn hàng chưa được upload tài liệu có cùng key với documentData
-      let idClick = documentData.ID; // Giả sử documentData chứa thông tin về đơn hàng hiện tại
+      const idClick = documentData.ID;
       const key = documentData.name;
-      const allOrders = document.querySelectorAll('.order--document'); // Giả sử các đơn hàng có class 'order--document'
-
-      let ordersWithDocument =[...allOrders].reduce((acc, order) => {
-         let data = order.document || JSON.parse(order.dataset.document);
-         if (data.name === key && data.ID !== idClick && data.file =='') { // Kiểm tra nếu đơn hàng có cùng key và khác ID của đơn hàng hiện tại
-            acc.push(data.ID); // Giả sử mỗi đơn hàng có thuộc tính ID
-         }
+      const list = [...document.querySelectorAll('.order--document')].reduce((acc, order) => {
+         const data = order.document || JSON.parse(order.dataset.document);
+         if (data.name === key && data.ID !== idClick && !data.file) acc.push(data.ID);
          return acc;
       }, []);
-
-      return {
-         idClick,
-         list: ordersWithDocument
-      }
+      return { idClick, list };
    }
 }

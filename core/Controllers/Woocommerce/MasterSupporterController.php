@@ -1,4 +1,6 @@
 <?php
+// Provides module declarations and business logic for MasterSupporterController.php.
+
 
 namespace App\Controllers\Woocommerce;
 
@@ -16,6 +18,7 @@ if (!defined('ABSPATH')) {
    exit;
 }
 
+// Defines MasterSupporterController class behavior for MasterSupporterController.php.
 class MasterSupporterController {
    private $hooks;
    private $container;
@@ -29,12 +32,14 @@ class MasterSupporterController {
       'woo.subInvoice'   => SubInvoiceController::class,
    ];
 
+   // Defines __construct method behavior for MasterSupporterController.php.
    public function __construct(HookManager $hooks, ?ServiceContainer $container = null) {
       $this->hooks = $hooks;
       $this->container = $container;
       $this->registerControllers();
    }
    
+   // Defines registerControllers method behavior for MasterSupporterController.php.
    private function registerControllers() {
       foreach ($this->woo_controllers as $service_name => $controller_class) {
          if ($this->container && $this->container->has($service_name)) {

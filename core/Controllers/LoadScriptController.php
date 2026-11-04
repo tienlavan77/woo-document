@@ -1,8 +1,11 @@
 <?php
+// Provides module declarations and business logic for LoadScriptController.php.
+
 namespace App\Controllers;
 
 use App\Support\HookManager;
 
+// Defines LoadScriptController class behavior for LoadScriptController.php.
 class LoadScriptController {
     private $hooks;
     public $handle = 'app';
@@ -13,14 +16,13 @@ class LoadScriptController {
     public $pages = ['edit', 'post', 'users','useredit', 'admin', 'wplogin'];
     public $type = ['product','order','user','setting','quotation','delivery', 'invoice','wplogin'];
     
+    // Defines __construct method behavior for LoadScriptController.php.
     public function __construct(HookManager $hooks) {
         $this->hooks = $hooks;
         $this->registerHooks();
     }
     
-    /**
-     * Đăng ký hooks thay vì trong constructor
-     */
+    /* Executes documented symbol logic in LoadScriptController.php. */
     private function registerHooks() {
         $this->hooks->addAction('admin_enqueue_scripts', [$this, 'importScript']);
         $this->hooks->addAction('login_enqueue_scripts', [$this, 'importScript']);
@@ -30,9 +32,7 @@ class LoadScriptController {
         $this->hooks->addFilter('script_loader_tag', [$this,'moduleScript'], 10, 3);
     }
     
-    /**
-     * Kiểm tra trang và load javascript
-     */
+    /* Executes documented symbol logic in LoadScriptController.php. */
     public function importScript() {
         global $pagenow;
         $rightPage = $this->getPagenow($pagenow);
@@ -42,8 +42,7 @@ class LoadScriptController {
         $is_dev = defined('WP_DEBUG') && WP_DEBUG;
         
         if ($is_dev) {
-            // WP_DEBUG dùng Vite dev server. Luôn đổi version để trình duyệt
-            // không giữ lại module cũ sau khi sửa source frontend.
+            // Executes documented symbol logic in LoadScriptController.php.
             $dev_version = (string) time();
             $dev_server = defined('DOCUMENT_VITE_DEV_SERVER') && DOCUMENT_VITE_DEV_SERVER
                 ? rtrim((string) DOCUMENT_VITE_DEV_SERVER, '/')
@@ -92,9 +91,7 @@ class LoadScriptController {
         return $tag;
     }
     
-    /**
-     * Lấy page hiện tại
-     */
+    /* Executes documented symbol logic in LoadScriptController.php. */
     public function getPagenow($pagenow) {
         $type = '';
         

@@ -1,4 +1,6 @@
 <?php
+// Provides module declarations and business logic for UserController.php.
+
 
 namespace App\Controllers\Woocommerce\User;
 
@@ -9,6 +11,7 @@ if (!defined('ABSPATH')) {
    exit;
 }
 
+// Defines UserController class behavior for UserController.php.
 class UserController {
    protected static $instance;
    private $hooks;

@@ -1,4 +1,6 @@
 <?php
+// Provides module declarations and business logic for App.php.
+
 
 namespace App;
 
@@ -30,6 +32,7 @@ if (!defined('ABSPATH')) {
    exit;
 }
 
+// Defines App class behavior for App.php.
 class App {
    protected static $instance;
    protected $container;
@@ -37,6 +40,7 @@ class App {
    protected $menu_registry;
    protected $hook_manager;
    
+   // Defines get_instance method behavior for App.php.
    public static function get_instance() {
       if (is_null(self::$instance)) {
           self::$instance = new self();
@@ -44,15 +48,14 @@ class App {
       return self::$instance;
    }
 
+   // Defines __construct method behavior for App.php.
    public function __construct() {
       $this->initializeContainer(); 
       $this->registerServices();
       $this->bootstrap();
    }
    
-   /**
-    * Khởi tạo DI Container
-    */
+   /* Executes documented symbol logic in App.php. */
    private function initializeContainer() {
       $this->container = new ServiceContainer();
       $this->hook_manager = new HookManager();
@@ -60,9 +63,7 @@ class App {
       $this->menu_registry = new MenuRegistry();
    }
    
-   /**
-    * Đăng ký tất cả services
-    */
+   /* Executes documented symbol logic in App.php. */
    private function registerServices() {
       $this->container->singleton('hooks', fn($c) => $this->hook_manager);
       $this->container->singleton('checkToken', fn($c) => new CheckTokenController($c->get('hooks')));
@@ -88,9 +89,7 @@ class App {
       $this->container->singleton('loadingApi', fn($c) => new LoadingApi($c->get('hooks'), $c));
    }
     
-   /**
-    * Khởi động plugin
-    */
+   /* Executes documented symbol logic in App.php. */
    private function bootstrap() {
       $this->plugin_manager->require('WooCommerce', 'woocommerce/woocommerce.php');
       
@@ -118,23 +117,17 @@ class App {
       }
    }
    
-   /**
-    * Lấy container (cho testing)
-    */
+   /* Executes documented symbol logic in App.php. */
    public function getContainer() {
       return $this->container;
    }
    
-   /**
-    * Lấy plugin manager
-    */
+   /* Executes documented symbol logic in App.php. */
    public function getPluginManager() {
       return $this->plugin_manager;
    }
    
-   /**
-    * Lấy menu registry
-    */
+   /* Executes documented symbol logic in App.php. */
    public function getMenuRegistry() {
       return $this->menu_registry;
    }

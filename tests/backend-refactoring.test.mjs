@@ -1,8 +1,4 @@
-/**
- * Bộ kiểm thử xác minh Giai đoạn 1 (O1 - Safe Cleanup) và Giai đoạn 2 (O2 - Core Backend PHP).
- * Kiểm tra việc dọn dẹp dead code, kiểm tra cú pháp php -l và thực thi runtime các lớp
- * ServiceContainer, HookManager, REST API routes, phản hồi chuẩn hóa, JWT và Vite URL.
- */
+/* Provides module implementation and exported declarations for backend-refactoring.test.mjs. */
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
