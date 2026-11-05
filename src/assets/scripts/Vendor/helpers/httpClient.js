@@ -1,10 +1,8 @@
-/**
- * HttpClient: Lớp tiện ích xử lý các yêu cầu HTTP (Fetch API)
- * Quản lý cấu hình mặc định, xử lý lỗi tập trung và chuẩn hóa dữ liệu trả về.
- */
+/* Provides module implementation and exported declarations for httpClient.js. */
+// Defines HttpClient class behavior for httpClient.js.
 export default class HttpClient {
-// Cấu hình mặc định cho Fetch
-	static wpNonce = document.querySelector('meta[name="wp-api-nonce"]')?.getAttribute('content') || '';
+// Executes documented symbol logic in httpClient.js.
+	static wpNonce = window.DocumentPluginConfig?.nonce || '';
 	static defaultOptions = {
 		mode: "cors",
 		cache: "no-cache",
@@ -18,14 +16,9 @@ export default class HttpClient {
 		referrerPolicy: "no-referrer",
 	};
 
-	/**
-	* Phương thức lõi để thực thi Fetch
-	* @param {string} url - Đường dẫn API
-	* @param {Object} customOptions - Các tùy chỉnh như method, body, headers
-	* @returns {Promise<Object>} - Dữ liệu đã được chuẩn hóa
-	*/
+	/* Executes documented symbol logic in httpClient.js. */
 	static async request(url, customOptions = {}) {
-		// Hợp nhất cấu hình mặc định và cấu hình tùy chỉnh
+		// Executes documented symbol logic in httpClient.js.
 		const options = {
 			...this.defaultOptions,
 			...customOptions,
@@ -35,8 +28,7 @@ export default class HttpClient {
 			},
 		};
 
-		// FIX: Nếu body là FormData, ta PHẢI xóa Content-Type header.
-		// Trình duyệt sẽ tự động thiết lập multipart/form-data kèm theo boundary.
+		// Executes documented symbol logic in httpClient.js.
 		if (options.body instanceof FormData) {
 			delete options.headers['Content-Type'];
 		}
@@ -45,7 +37,7 @@ export default class HttpClient {
 			
 			const response = await fetch(url, options);
 
-			// Đọc text trước để không phát sinh lỗi JSON mơ hồ khi PHP trả warning HTML.
+			// Executes documented symbol logic in httpClient.js.
 			const responseText = await response.text();
 			let data;
 			try {
@@ -61,7 +53,7 @@ export default class HttpClient {
 				throw new Error(serverMessage || `Máy chủ trả về dữ liệu không hợp lệ (${response.status}).`);
 			}
 
-			// Nếu HTTP status không nằm trong khoảng 200-299
+			// Executes documented symbol logic in httpClient.js.
 			if (!response.ok) {
 				throw {
 					status: {
@@ -72,14 +64,13 @@ export default class HttpClient {
 				};
 			}
 
-			// Trả về dữ liệu thành công theo cấu trúc Model mong đợi
-			// Nếu server đã trả về đúng cấu trúc { status: { code, data } } thì trả về data luôn
+			// Executes documented symbol logic in httpClient.js.
 			return data;
 
 		} catch (error) {
 			if (import.meta.env.DEV) console.error(`[HttpClient Error] URL: ${url}`, error);
 		
-		// Chuẩn hóa đối tượng lỗi để không làm hỏng logic của Model/Controller
+		// Executes documented symbol logic in httpClient.js.
 			return (error.status) ? error : {
 				status: {
 					code: 500,
@@ -90,16 +81,12 @@ export default class HttpClient {
 		}
 	}
 
-	/**
-	* Phím tắt cho GET Request
-	*/
+	/* Executes documented symbol logic in httpClient.js. */
 	static get(url, headers = {}) {
 		return this.request(url, { method: "GET", headers });
 	}
 
-	/**
-	* Phím tắt cho POST Request
-	*/
+	/* Executes documented symbol logic in httpClient.js. */
 	static post(url, body, headers = {}) {
 		const isFormData = body instanceof FormData;
 		const options = {
@@ -110,6 +97,7 @@ export default class HttpClient {
 		return this.request(url, options);
 	}
 
+	// Defines put method behavior for httpClient.js.
 	static put(url, body, headers = {}) {
 		return this.request(url, {
 			method: 'PUT',
@@ -118,9 +106,7 @@ export default class HttpClient {
 		});
 	}
 
-	/**
-	* Phím tắt cho DELETE Request
-	*/
+	/* Executes documented symbol logic in httpClient.js. */
 	static delete(url, body, headers = {}) {
 		const options = {
 			method: 'DELETE',

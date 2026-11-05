@@ -1,14 +1,15 @@
-// thêm model 
+// Provides module implementation and exported declarations for documentModel.js.
 import Model from '../model';
 
+// Defines DocumentModel class behavior for documentModel.js.
 export default class DocumentModel extends Model {
+   // Defines constructor method behavior for documentModel.js.
    constructor() {
       super();
-      // Khởi tạo dữ liệu mặc định cho Document
+      // Executes documented symbol logic in documentModel.js.
       this.api = '/wp-json/tinsinhphat/v1/documents'; // API endpoint để lấy dữ liệu tài liệu
       this.storageName = 'documentsData'; // Tên khóa để lưu trữ trong LocalStorage
-      // Model này chỉ dùng các method chuyên biệt (/files, /upload, ...),
-      // không gọi GET mặc định vào endpoint gốc /documents.
+      // Executes documented symbol logic in documentModel.js.
       this.onlyLocal = true;
       this.fileDetailCache = new Map();
       this.fileDetailRequests = new Map();
@@ -16,31 +17,23 @@ export default class DocumentModel extends Model {
       this.fileBlobRequests = new Map();
    }
    
-   /**
-    * Lấy danh sách file từ Server có phân trang
-    * @param {number} page - Trang hiện tại
-    * @param {number} count - Số lượng file mỗi trang
-    */
+   /* Executes documented symbol logic in documentModel.js. */
    async getFiles(page = 1, count = 12) {
-      // Gọi trực tiếp _httpGet để lấy danh sách mà không làm bẩn cache localStorage của model
+      // Executes documented symbol logic in documentModel.js.
       return await this._httpGet(`${this.api}/files?page=${page}&count=${count}`, {
          'Authorization': `Bearer ${this._token}`
       });
    }
 
-   /**
-    * Lấy thông tin chi tiết file từ Server
-    * @param {string} path Đường dẫn tương đối của file (relative_path)
-    * @returns {Promise} Phản hồi từ API chứa URL tuyệt đối
-    */
+   /* Executes documented symbol logic in documentModel.js. */
    async getFileDetail(path) {
-      // Loại bỏ phần đuôi .pdf (không phân biệt hoa thường) và chỉ lấy tên file nếu path là đường dẫn
+      // Executes documented symbol logic in documentModel.js.
       const slug = path.split('/').pop().replace(/\.pdf$/i, '');
 
       if (this.fileDetailCache.has(path)) return this.fileDetailCache.get(path);
       if (this.fileDetailRequests.has(path)) return this.fileDetailRequests.get(path);
 
-      // Gọi trực tiếp _httpGet để lấy dữ liệu mà không ghi đè vào this.data và localStorage của danh sách file
+      // Executes documented symbol logic in documentModel.js.
       const request = this._httpGet(`${this.api}/files/${encodeURIComponent(slug)}`, {
          'Authorization': `Bearer ${this._token}`
       }).then((response) => {
@@ -55,34 +48,28 @@ export default class DocumentModel extends Model {
       return request;
    }
 
-   /** Lấy trạng thái ba loại tài liệu của một order. */
+   /* Executes documented symbol logic in documentModel.js. */
    async getOrderDocuments(orderId) {
       return await this._httpGet(`${this.api}/orders/${encodeURIComponent(orderId)}`, {
          'Authorization': `Bearer ${this._token}`
       });
    }
 
-   /**
-    * Xây dựng URL stream file PDF. Request thực tế được gửi bằng JWT ở
-    * getFileBlob() vì PDFObject không hỗ trợ custom Authorization header.
-    * @param {string} path Đường dẫn tương đối của file (relative_path)
-    */
+   /* Executes documented symbol logic in documentModel.js. */
    getStreamUrl(path, version = '') {
       const slug = path.split('/').pop().replace(/\.pdf$/i, '');
       const query = version ? `?v=${encodeURIComponent(version)}` : '';
       return `${this.api}/stream/${encodeURIComponent(slug)}${query}`;
    }
 
-   /**
-    * Tải PDF bằng request có JWT để trình xem không cần gửi token trên URL.
-    */
+   /* Executes documented symbol logic in documentModel.js. */
    async getFileBlob(path, version = '') {
       const cacheKey = `${path}|${version}`;
       if (this.fileBlobCache.has(cacheKey)) return this.fileBlobCache.get(cacheKey);
       if (this.fileBlobRequests.has(cacheKey)) return this.fileBlobRequests.get(cacheKey);
 
       const url = this.getStreamUrl(path, version);
-      const nonce = document.querySelector('meta[name="wp-api-nonce"]')?.getAttribute('content') || '';
+      const nonce = window.DocumentPluginConfig?.nonce || '';
       const headers = {
          'Authorization': `Bearer ${this._token}`,
          'X-TSP-Plugin-Request': 'document'
@@ -102,7 +89,7 @@ export default class DocumentModel extends Model {
                const data = await response.json();
                message = data.message || data.code || message;
             } catch (error) {
-               // Response lỗi có thể không phải JSON.
+               // Executes documented symbol logic in documentModel.js.
             }
             throw new Error(message);
          }
@@ -119,6 +106,7 @@ export default class DocumentModel extends Model {
       return request;
    }
 
+   // Defines clearFileCache method behavior for documentModel.js.
    clearFileCache(path) {
       [...this.fileBlobCache.keys()]
          .filter((key) => key.startsWith(`${path}|`))
@@ -126,40 +114,31 @@ export default class DocumentModel extends Model {
       this.fileDetailCache.delete(path);
    }
 
-   /**
-    * Upload file lên server
-    * @param {File} file Đối tượng File từ input/drag-drop
-    */
+   /* Executes documented symbol logic in documentModel.js. */
    async uploadFile(file) {
       const formData = new FormData();
       formData.append('file', file);
       
-      // Lưu ý: Không thêm 'Content-Type' vào đây. 
-      // Trình duyệt sẽ tự động thêm multipart/form-data kèm boundary.
+      // Executes documented symbol logic in documentModel.js.
       return await this._httpPost(`${this.api}/upload`, formData, {
          'Authorization': `Bearer ${this._token}`
       });
    }
+   // Defines deleteFile method behavior for documentModel.js.
    async deleteFile(path) {
       const slug = path.split('/').pop().replace(/\.pdf$/i, '');
       return await this._httpDelete(`${this.api}/files/${slug}/delete`,{ path },{
          'Authorization': `Bearer ${this._token}`
       })
    }
-   /**
-    * Gán tài liệu cho danh sách đơn hàng
-    * @param {Object} payload { relative_path, order_ids, doc_type }
-    */
+   /* Executes documented symbol logic in documentModel.js. */
    async assignDocument(payload) {
       return await this._httpPost(`${this.api}/assign`, payload, {
          'Authorization': `Bearer ${this._token}`
       });
    }
 
-   /**
-    * Gỡ gán tài liệu cho danh sách đơn hàng
-    * @param {Object} payload { order_ids, doc_type }
-    */
+   /* Executes documented symbol logic in documentModel.js. */
    async unassignDocument(payload) {
       return await this._httpDelete(`${this.api}/assign`, payload, {
          'Authorization': `Bearer ${this._token}`

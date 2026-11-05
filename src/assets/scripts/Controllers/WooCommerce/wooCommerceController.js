@@ -8,7 +8,7 @@ import App from '../../app.js';
 export default class WooCommerceController {
    /* Executes documented symbol logic in wooCommerceController.js. */
    constructor(pageData = null) {
-      this.pageData = pageData || App.getPageData();
+      this.pageData = pageData || App.getPageData() || window.DocumentPluginConfig || {};
 
       // Executes documented symbol logic in wooCommerceController.js.
       this.init(this.pageData);
@@ -29,7 +29,8 @@ export default class WooCommerceController {
    /* Executes documented symbol logic in wooCommerceController.js. */
    async init(routeData = null) {
       try {
-         const { page, type } = routeData || this.pageData || {};
+         const pageData = routeData || this.pageData || window.DocumentPluginConfig || {};
+         const { page, type } = pageData;
 
          if (!page || !type) {
             console.warn("MasterWooCommerce: Không tìm thấy thông tin trang (pageData).");

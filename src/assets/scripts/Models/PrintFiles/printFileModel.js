@@ -127,7 +127,7 @@ export default class PrintFileModel extends Model {
 
    // Defines getBlob method behavior for printFileModel.js.
    async getBlob(url, expectedType = '') {
-      const nonce = document.querySelector('meta[name="wp-api-nonce"]')?.getAttribute('content') || '';
+      const nonce = window.DocumentPluginConfig?.nonce || '';
       const headers = {
          Authorization: `Bearer ${this._token}`,
          'X-TSP-Plugin-Request': 'document',

@@ -24,9 +24,8 @@ export default class DocumentController extends Controller {
    /* Executes documented symbol logic in documentController.js. */
    async init() {
       await this.model.init();
-      const pagenow = document.querySelector('#pagenow');
-      if (!pagenow) return;
-      const { page, type } = JSON.parse(pagenow.dataset.page);
+      const { page, type } = window.DocumentPluginConfig || {};
+      if (!page || !type) return;
       const controllerKey = `${page}${TextHelper.capitalize(type)}Init`;
       if (typeof this[controllerKey] === 'function') await this[controllerKey]();
    }
