@@ -183,6 +183,31 @@ class PrintFileApi extends Api {
 
     // Defines thumbnail method behavior for PrintFileApi.php.
     public function thumbnail(WP_REST_Request $request) {
+        // Re-render once for clients requesting the thumbnail algorithm version.
+        if ((string) $request->get_param('thumbnail_version') === '2') {
+            global $wpdb;
+            $id = absint($request->get_param('id'));
+            $model = new \ReflectionClass($this->model);
+            $assetMethod = $model->getMethod('getAsset');
+            $asset = $assetMethod->invoke($this->model, $id);
+            $directoriesMethod = $model->getMethod('ensureDirectories');
+            $directories = $directoriesMethod->invoke($this->model);
+            if (!is_wp_error($asset) && !is_wp_error($directories)) {
+                $source = trailingslashit($directories['originals']) . basename((string) $asset['storage_key']);
+                $name = basename((string) $asset['thumbnail_key']) ?: 'thumb-' . (($asset['sha256'] ?: md5($asset['original_name'])) . '.png');
+                $destination = trailingslashit($directories['thumbnails']) . $name;
+                $createMethod = $model->getMethod('createThumbnail');
+                $thumbnail = $createMethod->invoke($this->model, $source, $destination, strtolower((string) $asset['extension']));
+                if (($thumbnail['status'] ?? '') === 'ready') {
+                    $wpdb->update(\App\Support\PrintDatabase::assetsTable(), [
+                        'thumbnail_key' => 'thumbnails/' . $name,
+                        'thumbnail_status' => 'ready',
+                        'thumbnail_error' => '',
+                        'updated_at' => gmdate('Y-m-d H:i:s'),
+                    ], ['id' => $id], ['%s', '%s', '%s', '%s'], ['%d']);
+                }
+            }
+        }
         return $this->streamBinary($request->get_param('id'), 'thumbnail', 'image/png', '', true);
     }
 

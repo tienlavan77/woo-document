@@ -1,8 +1,12 @@
+// Provides module declarations and business logic for printFileController.js.
+
 import Controller from '../../controller.js';
 import PrintFileModel from '../../../Models/PrintFiles/printFileModel.js';
 import PrintFileViewer from '../../../Views/Woocommerce/PrintFiles/printFileViewer.js';
 
+// Defines PrintFileController class behavior for printFileController.js.
 export default class PrintFileController extends Controller {
+   // Defines constructor method behavior for printFileController.js.
    constructor() {
       super();
       this.model = new PrintFileModel();
@@ -16,6 +20,7 @@ export default class PrintFileController extends Controller {
       this.init();
    }
 
+   // Defines init method behavior for printFileController.js.
    async init() {
       await this.model.init();
       this.orderId = this._getOrderId();
@@ -37,6 +42,7 @@ export default class PrintFileController extends Controller {
       await this.reloadJobs();
    }
 
+   // Defines loadPrintTemplate method behavior for printFileController.js.
    async loadPrintTemplate() {
       const response = await this.model.getTemplate('print-template-A4');
       if (response?.status?.code === 200) {
@@ -44,6 +50,7 @@ export default class PrintFileController extends Controller {
       }
    }
 
+   // Defines loadPrintOptions method behavior for printFileController.js.
    async loadPrintOptions() {
       const response = await this.model.getPrintOptions();
       if (response?.status?.code === 200) {
@@ -58,18 +65,21 @@ export default class PrintFileController extends Controller {
       }
    }
 
+   // Defines _getOrderId method behavior for printFileController.js.
    _getOrderId() {
       const value = document.querySelector('#post_ID')?.value || new URLSearchParams(window.location.search).get('post');
       const id = Number.parseInt(value || '', 10);
       return Number.isInteger(id) && id > 0 ? id : null;
    }
 
+   // Defines _getOrderItemsMount method behavior for printFileController.js.
    _getOrderItemsMount() {
       const items = document.querySelector('#woocommerce-order-items, #order_items, .woocommerce-order-items, .wc-order-items-editable');
       if (!items) return null;
       return items.closest('.postbox') || items;
    }
 
+   // Defines _getOrderItems method behavior for printFileController.js.
    _getOrderItems() {
       const rows = document.querySelectorAll('#woocommerce-order-items [data-order_item_id], #order_items [data-order_item_id], .woocommerce-order-items [data-order_item_id]');
       return [...rows].map((row) => ({
@@ -78,6 +88,7 @@ export default class PrintFileController extends Controller {
       })).filter((item) => item.id);
    }
 
+   // Defines reloadJobs method behavior for printFileController.js.
    async reloadJobs() {
       const response = await this.model.getOrderJobs(this.orderId);
       if (response?.status?.code !== 200 && response?.status?.code !== 201) {
@@ -112,6 +123,7 @@ export default class PrintFileController extends Controller {
       this.loadThumbnails();
    }
 
+   // Defines loadThumbnails method behavior for printFileController.js.
    async loadThumbnails() {
       const cards = [...this.viewer.grid.querySelectorAll('.tsp-print-file-card')];
       await Promise.all(cards.map(async (card) => {
@@ -128,8 +140,10 @@ export default class PrintFileController extends Controller {
       }));
    }
 
+   // Defines getThumbnailUrl method behavior for printFileController.js.
    async getThumbnailUrl(asset) {
-      const thumbnailUrl = asset.thumbnail_url || `${this.model.api}/print-files/${encodeURIComponent(asset.id)}/thumbnail`;
+      const baseUrl = asset.thumbnail_url || `${this.model.api}/print-files/${encodeURIComponent(asset.id)}/thumbnail`;
+      const thumbnailUrl = `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}thumbnail_version=2`;
       const cacheKey = thumbnailUrl;
       if (this.thumbnailCache.has(cacheKey)) return this.thumbnailCache.get(cacheKey);
       if (this.thumbnailRequests.has(cacheKey)) return this.thumbnailRequests.get(cacheKey);
@@ -147,6 +161,7 @@ export default class PrintFileController extends Controller {
       return request;
    }
 
+   // Defines openUpload method behavior for printFileController.js.
    async openUpload(file) {
       if (!file) return;
       this.viewer.showNotice('Đang upload Print file...', 'info');
@@ -160,6 +175,7 @@ export default class PrintFileController extends Controller {
       await this.assignAsset(response.status.data);
    }
 
+   // Defines openLibrary method behavior for printFileController.js.
    async openLibrary() {
       const response = await this.model.getAssets({ page: 1, count: 15 });
       if (response?.status?.code !== 200) {
@@ -179,6 +195,7 @@ export default class PrintFileController extends Controller {
       await this.loadLibraryThumbnails(data.files || []);
    }
 
+   // Defines searchLibrary method behavior for printFileController.js.
    async searchLibrary(keyword = '') {
       this.librarySearch = keyword.trim();
       this.libraryPage = 1;
@@ -194,6 +211,7 @@ export default class PrintFileController extends Controller {
       await this.loadLibraryThumbnails(data.files || []);
    }
 
+   // Defines loadMoreLibrary method behavior for printFileController.js.
    async loadMoreLibrary(keyword = '') {
       this.libraryPage += 1;
       const response = await this.model.getAssets({ page: this.libraryPage, count: 15, search: keyword.trim() });
@@ -207,6 +225,7 @@ export default class PrintFileController extends Controller {
       await this.loadLibraryThumbnails(data.files || []);
    }
 
+   // Defines loadLibraryThumbnails method behavior for printFileController.js.
    async loadLibraryThumbnails(files) {
       const cards = [...(this.viewer.libraryGrid?.querySelectorAll('.tsp-print-library-card') || [])];
       await Promise.all(cards.map(async (card) => {
@@ -229,6 +248,7 @@ export default class PrintFileController extends Controller {
       }));
    }
 
+   // Defines assignAsset method behavior for printFileController.js.
    async assignAsset(asset) {
       if (!asset?.id) return;
       const response = await this.model.createJob(this.orderId, {
@@ -249,6 +269,7 @@ export default class PrintFileController extends Controller {
       await this.reloadJobs();
    }
 
+   // Defines saveJob method behavior for printFileController.js.
    async saveJob(job, data) {
       if (this.savingJob) return false;
       this.savingJob = true;
@@ -290,6 +311,7 @@ export default class PrintFileController extends Controller {
       }
    }
 
+   // Defines preview method behavior for printFileController.js.
    async preview(job) {
       try {
          const url = await this.getThumbnailUrl(job.asset);
@@ -299,6 +321,7 @@ export default class PrintFileController extends Controller {
       }
    }
 
+   // Defines showSheet method behavior for printFileController.js.
    async showSheet(job, type) {
       let thumbnailUrl = '';
       if (type === 'print' || type === 'product') {
@@ -312,11 +335,13 @@ export default class PrintFileController extends Controller {
       this.viewer.printSheet(job, type, { thumbnailUrl });
    }
 
+   // Defines getThumbnailDataUrl method behavior for printFileController.js.
    async getThumbnailDataUrl(asset) {
       if (!asset?.id) return '';
-      const cacheKey = asset.thumbnail_url || String(asset.id);
+      const baseUrl = asset.thumbnail_url || `${this.model.api}/print-files/${encodeURIComponent(asset.id)}/thumbnail`;
+      const thumbnailUrl = `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}thumbnail_version=2`;
+      const cacheKey = thumbnailUrl;
       if (this.thumbnailDataCache.has(cacheKey)) return this.thumbnailDataCache.get(cacheKey);
-      const thumbnailUrl = asset.thumbnail_url || `${this.model.api}/print-files/${encodeURIComponent(asset.id)}/thumbnail`;
       const blob = await this.model.getBlob(thumbnailUrl, 'image/');
       const dataUrl = await new Promise((resolve, reject) => {
          const reader = new FileReader();
@@ -328,6 +353,7 @@ export default class PrintFileController extends Controller {
       return dataUrl;
    }
 
+   // Defines removeJob method behavior for printFileController.js.
    async removeJob(job, type = 'product') {
       if (!job?.id || this.removingJobId) return;
       this.removingJobId = job.id;
@@ -352,6 +378,7 @@ export default class PrintFileController extends Controller {
       }
    }
 
+   // Defines removeAssetFromOrder method behavior for printFileController.js.
    async removeAssetFromOrder(asset) {
       if (!asset?.id) return;
 

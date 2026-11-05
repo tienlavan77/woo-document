@@ -1,10 +1,14 @@
+// Provides module declarations and business logic for printFileViewer.js.
+
 import Viewer from '../../viewer.js';
 import TagBuilder from '../../../Vendor/helpers/tagBuilder.js';
 import UploadFiles from '../../../Vendor/dragdropfile/dragDropUpload.js';
 import { FILE_PDF_ICON, AI_FILE_ICON } from '../../../Vendor/dragdropfile/filesSVGIcon.js';
 import PanelViewer from '../../Panel/panelViewer.js';
 
+// Defines PrintFileViewer class behavior for printFileViewer.js.
 export default class PrintFileViewer extends Viewer {
+   // Defines constructor method behavior for printFileViewer.js.
    constructor() {
       super();
       this.uploadFiles = null;
@@ -30,6 +34,7 @@ export default class PrintFileViewer extends Viewer {
       this.documentPanelState = this._loadDocumentPanelState();
    }
 
+   // Defines createPanel method behavior for printFileViewer.js.
    createPanel() {
       const panel = TagBuilder.create('section')
          .setAttributes({ className: 'tsp-print-files-panel' })
@@ -55,6 +60,7 @@ export default class PrintFileViewer extends Viewer {
       return panel;
    }
 
+   // Defines createDocumentPanel method behavior for printFileViewer.js.
    createDocumentPanel() {
       this.documentPanelViewer = new PanelViewer({
          controls: ['stamp', 'signature', 'reference'],
@@ -74,6 +80,7 @@ export default class PrintFileViewer extends Viewer {
       return this.documentPanelViewer.body;
    }
 
+   // Defines _loadDocumentPanelState method behavior for printFileViewer.js.
    _loadDocumentPanelState() {
       const defaults = { stamp: true, signature: true, reference: true };
       try {
@@ -84,6 +91,7 @@ export default class PrintFileViewer extends Viewer {
       }
    }
 
+   // Defines _saveDocumentPanelState method behavior for printFileViewer.js.
    _saveDocumentPanelState() {
       try {
          window.localStorage.setItem('tsp_print_document_modifier', JSON.stringify(this.documentPanelState));
@@ -92,20 +100,24 @@ export default class PrintFileViewer extends Viewer {
       }
    }
 
+   // Defines bindPanelActions method behavior for printFileViewer.js.
    bindPanelActions({ onUpload, onLibrary }) {
       this.onUploadFile = onUpload;
       this.onOpenLibrary = onLibrary;
       this.libraryButton.onclick = () => this.onOpenLibrary?.();
    }
 
+   // Defines setPrintTemplate method behavior for printFileViewer.js.
    setPrintTemplate(template) {
       this.printTemplate = typeof template === 'string' ? template : '';
    }
 
+   // Defines setPrintTemplateContext method behavior for printFileViewer.js.
    setPrintTemplateContext(context) {
       this.printTemplateContext = context && typeof context === 'object' ? context : {};
    }
 
+   // Defines renderJobs method behavior for printFileViewer.js.
    renderJobs(jobs, callbacks = {}) {
       this.currentJobs = jobs || [];
       this.currentCallbacks = callbacks;
@@ -141,15 +153,18 @@ export default class PrintFileViewer extends Viewer {
       this._renderProductPanel(callbacks);
    }
 
+   // Defines setActiveAsset method behavior for printFileViewer.js.
    setActiveAsset(assetId) {
       this.pendingActiveAssetId = assetId ? String(assetId) : null;
       this._storeActiveAsset(assetId);
    }
 
+   // Defines setActiveAssetStorageKey method behavior for printFileViewer.js.
    setActiveAssetStorageKey(key) {
       this.activeAssetStorageKey = key ? String(key) : '';
    }
 
+   // Defines _getStoredActiveAsset method behavior for printFileViewer.js.
    _getStoredActiveAsset() {
       if (!this.activeAssetStorageKey) return '';
       try {
@@ -159,6 +174,7 @@ export default class PrintFileViewer extends Viewer {
       }
    }
 
+   // Defines _storeActiveAsset method behavior for printFileViewer.js.
    _storeActiveAsset(assetId) {
       if (!this.activeAssetStorageKey) return;
       try {
@@ -169,6 +185,7 @@ export default class PrintFileViewer extends Viewer {
       }
    }
 
+   // Defines _groupJobs method behavior for printFileViewer.js.
    _groupJobs(jobs) {
       const groups = new Map();
       (jobs || []).forEach((job) => {
@@ -180,6 +197,7 @@ export default class PrintFileViewer extends Viewer {
       return [...groups.values()];
    }
 
+   // Defines _selectedJob method behavior for printFileViewer.js.
    _selectedJob(group) {
       const key = String(group.asset.id);
       const rememberedId = this.selectedJobByAsset.get(key);
@@ -195,6 +213,7 @@ export default class PrintFileViewer extends Viewer {
       return job;
    }
 
+   // Defines _selectedProductJob method behavior for printFileViewer.js.
    _selectedProductJob(productJobs = []) {
       productJobs = this._uniqueProductJobs(productJobs);
       if (this.selectedProductJobId === 'none') return null;
@@ -208,6 +227,7 @@ export default class PrintFileViewer extends Viewer {
       return selected || null;
    }
 
+   // Defines _uniqueProductJobs method behavior for printFileViewer.js.
    _uniqueProductJobs(productJobs = []) {
       const unique = new Map();
       (productJobs || []).forEach((productJob) => {
@@ -222,12 +242,14 @@ export default class PrintFileViewer extends Viewer {
       return [...unique.values()];
    }
 
+   // Defines _printJob method behavior for printFileViewer.js.
    _printJob(group) {
       return group.jobs.find((job) => job?.print_ticket?.id || this._hasTicket(job, 'print'))
          || group.jobs[0]
          || null;
    }
 
+   // Defines _hasTicket method behavior for printFileViewer.js.
    _hasTicket(job, type) {
       if (type === 'print') {
          return job?.print_document_status === 'ready'
@@ -236,10 +258,12 @@ export default class PrintFileViewer extends Viewer {
       return job?.product_document_status === 'ready';
    }
 
+   // Defines _hasAnyTicket method behavior for printFileViewer.js.
    _hasAnyTicket(job) {
       return this._hasTicket(job, 'print') || this._hasTicket(job, 'product');
    }
 
+   // Defines _canCreateProductTicket method behavior for printFileViewer.js.
    _canCreateProductTicket(callbacks = {}) {
       const orderItems = callbacks.orderItems || [];
       if (!orderItems.length) return false;
@@ -250,6 +274,7 @@ export default class PrintFileViewer extends Viewer {
       )));
    }
 
+   // Defines _prepareUploadZone method behavior for printFileViewer.js.
    _prepareUploadZone() {
       const main = this.uploadFiles.data.main;
       main.classList.add('tsp-print-upload-zone');
@@ -278,6 +303,7 @@ export default class PrintFileViewer extends Viewer {
       };
    }
 
+   // Defines _renderActiveJob method behavior for printFileViewer.js.
    _renderActiveJob(jobs, callbacks) {
       const group = this.assetGroups[this.activeIndex];
       if (!group) return;
@@ -373,6 +399,7 @@ export default class PrintFileViewer extends Viewer {
       }
    }
 
+   // Defines _renderProductPanel method behavior for printFileViewer.js.
    _renderProductPanel(callbacks = {}) {
       this.grid.querySelector('.tsp-print-product-panel')?.remove();
       const items = callbacks.orderItems || [];
@@ -417,6 +444,7 @@ export default class PrintFileViewer extends Viewer {
       this.grid.append(panel);
    }
 
+   // Defines _productThumbnail method behavior for printFileViewer.js.
    _productThumbnail(item, productJob, itemCount) {
       const hasTicket = this._hasTicket(productJob, 'product');
       const preview = TagBuilder.create('div').setAttributes({ className: 'tsp-print-product-thumbnail' }).build();
@@ -454,6 +482,7 @@ export default class PrintFileViewer extends Viewer {
       return preview;
    }
 
+   // Defines _stopProductEditing method behavior for printFileViewer.js.
    _stopProductEditing() {
       this.selectedProductJobId = null;
       this.newProductItemByAsset.delete('order');
@@ -461,6 +490,7 @@ export default class PrintFileViewer extends Viewer {
       this.previousProductByAsset.delete('order');
    }
 
+   // Defines _newProductJob method behavior for printFileViewer.js.
    _newProductJob(baseJob, orderItemId = 0) {
       return {
          id: 0,
@@ -479,6 +509,7 @@ export default class PrintFileViewer extends Viewer {
       };
    }
 
+   // Defines _createJobForm method behavior for printFileViewer.js.
    _createJobForm(asset, items, job, callbacks = {}) {
       const productJob = callbacks.productJob || job;
       const specs = productJob?.specs || {};
@@ -489,6 +520,7 @@ export default class PrintFileViewer extends Viewer {
       return form;
    }
 
+   // Defines _appendPrintFields method behavior for printFileViewer.js.
    _appendPrintFields(form, asset, specs, job = {}, items = [], callbacks = {}) {
       const assetWidthCm = this._pointsToCm(asset.width);
       const assetHeightCm = this._pointsToCm(asset.height);
@@ -551,6 +583,7 @@ export default class PrintFileViewer extends Viewer {
       form.append(printSection, productSection);
    }
 
+   // Defines _documentStatusRow method behavior for printFileViewer.js.
    _documentStatusRow(job, type, callbacks, form, section = null, initiallyEditing = false) {
       const ready = this._hasTicket(job, type);
       const row = TagBuilder.create('div').setAttributes({ className: `tsp-print-document-status-row tsp-print-document-status-${type}` }).build();
@@ -587,6 +620,7 @@ export default class PrintFileViewer extends Viewer {
       let editing = initiallyEditing;
       const action = this._button(editing ? 'Lưu phiếu' : (ready ? 'Sửa phiếu' : 'Tạo phiếu'), 'button button-primary');
       let cancel = null;
+      // Defines addCancelButton function behavior for printFileViewer.js.
       const addCancelButton = () => {
          if (cancel) return;
          cancel = this._button('Hủy', 'button tsp-print-document-cancel');
@@ -661,6 +695,7 @@ export default class PrintFileViewer extends Viewer {
       return row;
    }
 
+   // Defines _setSectionFieldsEnabled method behavior for printFileViewer.js.
    _setSectionFieldsEnabled(section, enabled, preserveNames = []) {
       if (!section) return;
       section.classList.toggle('tsp-print-fields-locked', !enabled);
@@ -669,6 +704,7 @@ export default class PrintFileViewer extends Viewer {
       });
    }
 
+   // Defines _collectSectionFields method behavior for printFileViewer.js.
    _collectSectionFields(section) {
       const data = {};
       if (!section) return data;
@@ -679,6 +715,7 @@ export default class PrintFileViewer extends Viewer {
       return data;
    }
 
+   // Defines _collectPrintSpecs method behavior for printFileViewer.js.
    _collectPrintSpecs(data) {
       return {
          supplier: Number(data.supplier || 0),
@@ -705,12 +742,14 @@ export default class PrintFileViewer extends Viewer {
       };
    }
 
+   // Defines _supplierField method behavior for printFileViewer.js.
    _supplierField(suppliers, value = '') {
       const field = this._field('Nhà cung cấp', this._supplierSelect('supplier', suppliers, value));
       field.classList.add('tsp-print-supplier-field');
       return field;
    }
 
+   // Defines _supplierSelect method behavior for printFileViewer.js.
    _supplierSelect(name, suppliers, value = '') {
       const select = TagBuilder.create('select').setAttributes({ name, className: 'form__field form__item regular-text wd-100 setting__item tsp-print-input' }).build();
       select.append(TagBuilder.create('option').setAttributes({ value: '' }).text('Chọn nhà cung cấp').build());
@@ -725,10 +764,12 @@ export default class PrintFileViewer extends Viewer {
       return select;
    }
 
+   // Defines _materialSelect method behavior for printFileViewer.js.
    _materialSelect(materials, value = '') {
       return this._termSelect('material', materials, value, 'Chọn chất liệu');
    }
 
+   // Defines _termSelect method behavior for printFileViewer.js.
    _termSelect(name, terms, value = '', placeholder = 'Chọn giá trị') {
       const select = TagBuilder.create('select').setAttributes({ name, className: 'form__field form__item regular-text wd-100 setting__item tsp-print-input' }).build();
       select.append(TagBuilder.create('option').setAttributes({ value: '' }).text(placeholder).build());
@@ -742,34 +783,39 @@ export default class PrintFileViewer extends Viewer {
       return select;
    }
 
+   // Defines _dimensionValue method behavior for printFileViewer.js.
    _dimensionValue(value, fallback) {
       return Number(value) > 0 ? value : fallback;
    }
 
+   // Defines _pointsToCm method behavior for printFileViewer.js.
    _pointsToCm(value) {
       const points = Number(value || 0);
       return points > 0 ? Number((points * 2.54 / 72).toFixed(2)) : '';
    }
 
+   // Defines _textarea method behavior for printFileViewer.js.
    _textarea(name, value = '') {
       return TagBuilder.create('textarea').setAttributes({ name, className: 'form__field form__item regular-text wd-100 setting__item tsp-print-input', rows: 3 }).text(value).build();
    }
 
+   // Defines _button method behavior for printFileViewer.js.
    _button(label, className) {
       return TagBuilder.create('button').setAttributes({ type: 'button', className }).text(label).build();
    }
 
+   // Defines setThumbnail method behavior for printFileViewer.js.
    setThumbnail(card, url) {
       const image = card.querySelector('img[data-thumbnail-url]');
-      // Only blob URLs fetched from the thumbnail endpoint may reach <img>.
+      // Keep the current image until the replacement blob has loaded successfully.
       if (!image || !url || !String(url).startsWith('blob:')) return;
-      image.removeAttribute('src');
-      image.addEventListener('load', () => card.querySelector('.tsp-print-file-fallback')?.classList.remove('is-visible'), { once: true });
-      image.addEventListener('error', () => image.classList.add('is-unavailable'), { once: true });
-      image.classList.remove('is-unavailable');
-      image.src = url;
+      const replacement = new Image();
+      replacement.onload = () => { image.src = url; image.classList.remove('is-unavailable'); card.querySelector('.tsp-print-file-fallback')?.classList.remove('is-visible'); };
+      replacement.onerror = () => { URL.revokeObjectURL(url); };
+      replacement.src = url;
    }
 
+   // Defines resetUploadZone method behavior for printFileViewer.js.
    resetUploadZone() {
       const data = this.uploadFiles?.data;
       if (!data) return;
@@ -780,6 +826,7 @@ export default class PrintFileViewer extends Viewer {
       data.result = [];
    }
 
+   // Defines showUploadModal method behavior for printFileViewer.js.
    showUploadModal({ onFile }) {
       this.uploadFiles = new UploadFiles();
       const id = `tsp-print-upload-${Date.now()}`;
@@ -806,6 +853,7 @@ export default class PrintFileViewer extends Viewer {
       return this.modal.title('Upload Print file').width('90%').maxWidth('680px').footer(true).footerContent([close]).content([main]).open();
    }
 
+   // Defines showLibraryModal method behavior for printFileViewer.js.
    showLibraryModal(files, callbacks = {}) {
       const wrapper = TagBuilder.create('div').setAttributes({ className: 'tsp-print-library' }).build();
       const search = TagBuilder.create('input').setAttributes({ type: 'search', className: 'tsp-print-library-search', placeholder: 'Tìm theo tên file...' }).build();
@@ -817,6 +865,7 @@ export default class PrintFileViewer extends Viewer {
       this.libraryGrid = grid;
       const assign = this._button('Gán file', 'button button-primary');
       assign.disabled = true;
+      // Defines render function behavior for printFileViewer.js.
       const render = (nextFiles = libraryFiles, append = false) => {
          libraryFiles = append ? [...libraryFiles, ...nextFiles] : nextFiles;
          grid.innerHTML = '';
@@ -868,12 +917,14 @@ export default class PrintFileViewer extends Viewer {
       return this.modal.title('Quản lý Print files').width('94%').maxWidth('960px').footer(true).footerContent([close, assign]).content([wrapper]).open();
    }
 
+   // Defines _input method behavior for printFileViewer.js.
    _input(name, value, type = 'text', step = '') {
       const attrs = { name, type, value: String(value ?? ''), className: 'form__field form__item regular-text wd-100 setting__item tsp-print-input' };
       if (step) attrs.step = step;
       return TagBuilder.create('input').setAttributes(attrs).build();
    }
 
+   // Defines _field method behavior for printFileViewer.js.
    _field(label, control) {
       return TagBuilder.create('div').setAttributes({ className: 'frame__item' }).append([
          TagBuilder.create('label').setAttributes({ className: 'item__label' }).append([
@@ -883,6 +934,7 @@ export default class PrintFileViewer extends Viewer {
       ]).build();
    }
 
+   // Defines showPreview method behavior for printFileViewer.js.
    showPreview(asset, blobUrl, { thumbnail = false } = {}) {
       const body = TagBuilder.create('div').setAttributes({ className: 'tsp-print-preview-modal' }).build();
       if (thumbnail) {
@@ -895,6 +947,7 @@ export default class PrintFileViewer extends Viewer {
       return this.modal.title(asset.name).width('95%').maxWidth('1200px').footer(false).content([body]).open();
    }
 
+   // Defines showSheetModal method behavior for printFileViewer.js.
    showSheetModal(job, type = 'all', options = {}) {
       const sheet = this._createSheet(job, type, options);
       this.currentSheet = { job, type, options };
@@ -914,6 +967,7 @@ export default class PrintFileViewer extends Viewer {
          .open();
    }
 
+   // Defines printSheet method behavior for printFileViewer.js.
    printSheet(job, type = 'all', options = {}) {
       const html = this._createSheet(job, type, options).outerHTML;
       const frame = document.createElement('iframe');
@@ -953,6 +1007,7 @@ export default class PrintFileViewer extends Viewer {
          </html>
       `);
       doc.close();
+      // Defines cleanup function behavior for printFileViewer.js.
       const cleanup = () => frame.remove();
       win.addEventListener('afterprint', cleanup, { once: true });
       const images = [...doc.images];
@@ -970,6 +1025,7 @@ export default class PrintFileViewer extends Viewer {
       });
    }
 
+   // Defines _createSheet method behavior for printFileViewer.js.
    _createSheet(job, type = 'all', options = {}) {
       if (['print', 'product'].includes(type) && this.printTemplate) {
          return this._createPrintTemplateSheet(job, options, type);
@@ -1048,6 +1104,7 @@ export default class PrintFileViewer extends Viewer {
          .build();
    }
 
+   // Defines _createPrintTemplateSheet method behavior for printFileViewer.js.
    _createPrintTemplateSheet(job, options = {}, type = 'print') {
       const holder = document.createElement('div');
       holder.innerHTML = this.printTemplate.trim();
@@ -1130,6 +1187,7 @@ export default class PrintFileViewer extends Viewer {
       const thumbnail = article.querySelector('[data-tsp-bind-src="asset.thumbnail"]');
       const reference = article.querySelector('[data-tsp-print-option="reference"]');
       const emptyThumbnail = article.querySelector('[data-tsp-thumbnail-empty]');
+      // Defines showEmptyThumbnail function behavior for printFileViewer.js.
       const showEmptyThumbnail = () => {
          if (thumbnail) thumbnail.style.display = 'none';
          if (reference) reference.style.display = 'none';
@@ -1151,15 +1209,18 @@ export default class PrintFileViewer extends Viewer {
       return result;
    }
 
+   // Defines _templateValue method behavior for printFileViewer.js.
    _templateValue(context, path) {
       return String(path || '').split('.').reduce((value, key) => value?.[key], context) ?? '';
    }
 
+   // Defines _supplierLabel method behavior for printFileViewer.js.
    _supplierLabel(value) {
       const supplier = (this.printTemplateContext?.suppliers || []).find((item) => String(item.id) === String(value));
       return supplier?.name || value || '';
    }
 
+   // Defines _supplierDetails method behavior for printFileViewer.js.
    _supplierDetails(value) {
       const supplier = (this.printTemplateContext?.suppliers || []).find((item) => String(item.id) === String(value));
       if (!supplier) {
@@ -1178,6 +1239,7 @@ export default class PrintFileViewer extends Viewer {
       };
    }
 
+   // Defines _formatAdministrativeDate method behavior for printFileViewer.js.
    _formatAdministrativeDate() {
       const date = new Date();
       const day = String(date.getDate()).padStart(2, '0');

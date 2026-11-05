@@ -996,22 +996,11 @@ class PrintFileModel {
 
     // Defines createThumbnail method behavior for PrintFileModel.php.
     private function createThumbnail($source, $destination, $extension) {
-        $renderer = $this->findBinary('gs');
-        $command = $renderer ? escapeshellarg($renderer) . ' -q -dSAFER -dBATCH -dNOPAUSE -dFirstPage=1 -dLastPage=1 -sDEVICE=pngalpha -r96 -sOutputFile=' . escapeshellarg($destination) . ' ' . escapeshellarg($source) : '';
-        [$exit_code, $output] = $command ? $this->runCommand($command) : [1, 'Ghostscript unavailable.'];
-        if (($exit_code !== 0 || !is_file($destination)) && ($renderer = ($this->findBinary('magick') ?: $this->findBinary('convert')))) {
-            [$exit_code, $output] = $this->runCommand(escapeshellarg($renderer) . ' -thumbnail 900x900 ' . escapeshellarg($source . '[0]') . ' ' . escapeshellarg($destination));
-        }
-        if ($exit_code !== 0 || !is_file($destination)) {
-            if (function_exists('imagecreatetruecolor') && function_exists('imagepng')) {
-                $canvas = imagecreatetruecolor(900, 900); $background = imagecolorallocate($canvas, 248, 250, 252); $ink = imagecolorallocate($canvas, 30, 41, 59);
-                imagefill($canvas, 0, 0, $background); imagestring($canvas, 5, 24, 24, strtoupper($extension) . ' FILE', $ink); imagepng($canvas, $destination, 6); imagedestroy($canvas);
-            }
-        }
-        if (!is_file($destination) || !filesize($destination) || !$this->resizeThumbnail($destination)) {
-            return ['status' => 'failed', 'error' => trim($output) ?: 'Không thể tạo thumbnail từ file.', 'path' => ''];
-        }
-        return ['status' => 'ready', 'error' => '', 'path' => $destination];
+        $output = 'Không tìm thấy trình kết xuất file.'; $commands = []; $temporary = tempnam(sys_get_temp_dir(), 'print-render-'); $renderSource = $source; $temporaryPath = $temporary ? $temporary . '.' . $extension : '';
+        if ($temporaryPath && @copy($source, $temporaryPath)) { $renderSource = $temporaryPath; } else { $temporaryPath = ''; }
+        if ($renderer = $this->findBinary('gs')) $commands[] = escapeshellarg($renderer) . ' -q -dSAFER -dBATCH -dNOPAUSE -dFirstPage=1 -dLastPage=1' . ($extension === 'ai' ? ' -dEPSCrop' : '') . ' -sDEVICE=png16m -r144 -dTextAlphaBits=4 -dGraphicsAlphaBits=4 -sOutputFile=' . escapeshellarg($destination) . ' ' . escapeshellarg($renderSource); if ($renderer = ($this->findBinary('magick') ?: $this->findBinary('convert'))) $commands[] = escapeshellarg($renderer) . ' -density 144 -background white -alpha remove -alpha off -thumbnail 900x900 ' . escapeshellarg($renderSource . '[0]') . ' ' . escapeshellarg($destination);
+        $valid = false; foreach ($commands as $command) { if (is_file($destination)) @unlink($destination); [$exit_code, $output] = $this->runCommand($command); $valid = $exit_code === 0 && is_file($destination) && filesize($destination) && @getimagesize($destination); if ($valid) break; } if ($temporaryPath) @unlink($temporaryPath);
+        if (!$valid || !$this->resizeThumbnail($destination)) { if (is_file($destination)) @unlink($destination); return ['status' => 'failed', 'error' => trim($output), 'path' => '']; } return ['status' => 'ready', 'error' => '', 'path' => $destination];
     }
 
     // Defines resizeThumbnail method behavior for PrintFileModel.php.
@@ -1022,23 +1011,16 @@ class PrintFileModel {
 
         $width = imagesx($source);
         $height = imagesy($source);
-        if (!$width || !$height) {
-            imagedestroy($source);
-            return false;
-        }
+        if (!$width || !$height) { if (PHP_VERSION_ID < 80000 && function_exists('imagedestroy')) imagedestroy($source); return false; }
 
         $scale = self::THUMBNAIL_WIDTH / $width;
         $target_width = self::THUMBNAIL_WIDTH;
         $target_height = max(1, (int) round($height * $scale));
         $target = imagecreatetruecolor($target_width, $target_height);
-        imagealphablending($target, false);
-        imagesavealpha($target, true);
-        $transparent = imagecolorallocatealpha($target, 255, 255, 255, 127);
-        imagefill($target, 0, 0, $transparent);
-        imagecopyresampled($target, $source, 0, 0, 0, 0, $target_width, $target_height, $width, $height);
-        $success = imagepng($target, $path, 6);
-        imagedestroy($source);
-        imagedestroy($target);
+        $background = imagecolorallocate($target, 255, 255, 255);
+        imagefill($target, 0, 0, $background);
+        imagecopyresampled($target, $source, 0, 0, 0, 0, $target_width, $target_height, $width, $height); $success = imagepng($target, $path, 6);
+        if (PHP_VERSION_ID < 80000 && function_exists('imagedestroy')) { imagedestroy($source); imagedestroy($target); }
         return $success;
     }
 
