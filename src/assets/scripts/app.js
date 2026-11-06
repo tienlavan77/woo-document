@@ -17,6 +17,9 @@ export default class App {
         if (adminPage === 'wc-orders' || adminPage === 'wc-orders--custom-view') {
             return { page: 'edit', type: 'order' };
         }
+        if (['quotation', 'delivery', 'invoice', 'setting'].includes(adminPage)) {
+            return { page: 'admin', type: adminPage };
+        }
         if (path === 'edit.php' && ['shop_order', 'product'].includes(postType)) {
             return { page: 'edit', type: postType === 'shop_order' ? 'order' : 'product' };
         }

@@ -23,7 +23,8 @@ export default class AdminLoadController {
    /* Executes documented symbol logic in adminLoadController.js. */
    init(routeData = null) {
       try {
-         const { page, type } = routeData || this.pageData || {};
+         const pageData = routeData || this.pageData || window.DocumentPluginConfig || {};
+         const { page, type } = pageData;
 
          if (!page || !type) {
             throw new Error("Dữ liệu page hoặc type không hợp lệ.");
