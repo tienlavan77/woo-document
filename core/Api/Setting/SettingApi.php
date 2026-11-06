@@ -90,12 +90,12 @@ class SettingApi extends Api {
             [
                'methods'             => 'GET',
                'callback'            => [$this, 'getUserSetting'],
-               'permission_callback' => [JwtAuthenticate::class, 'JwtAuthenticate']
+               'permission_callback' => [$this, 'userPermission']
             ],
             [
                'methods'             => 'POST',
                'callback'            => [$this, 'setUserSetting'],
-               'permission_callback' => [JwtAuthenticate::class, 'JwtAuthenticate']
+               'permission_callback' => [$this, 'userPermission']
             ]
          ]
       );
@@ -108,6 +108,11 @@ class SettingApi extends Api {
          'manage_options',
          'Chỉ admin mới được quản lý cấu hình này.'
       );
+   }
+
+   // Authenticates allowed roles for per-user settings without requiring existing API credentials.
+   public function userPermission(WP_REST_Request $request) {
+      return JwtAuthenticate::JwtAuthenticate($request, false);
    }
 
    /**
